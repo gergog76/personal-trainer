@@ -449,7 +449,25 @@ function renderLeft(){
     c.appendChild(section);
   });
 
-  const actions = el('div'); actions.style.cssText = 'margin-top:20px; display:flex; gap:8px;';
+const actions = el('div'); actions.style.cssText = 'margin-top:20px; display:flex; gap:8px;';
+  const dupBtn = el('button','btn','Duplikálás');
+  dupBtn.onclick = () => {
+    const copy = JSON.parse(JSON.stringify(p));
+    delete copy._isNew;
+    let baseId = slugify(p.name) + '-masolat';
+    let newId = baseId, n = 2;
+    while (data.programs.some(x => x.id === newId)) newId = baseId + '-' + (n++);
+    copy.id = newId;
+    copy.name = p.name + ' (másolat)';
+    copy._isNew = true;
+    data.programs.push(copy);
+    editingProgram = copy;
+    selectedProgramId = null;
+    setDirty(true);
+    renderMid(); renderLeft(); renderRight();
+    toast('Tréning duplikálva – nevezd át, és a gyakorlatokat is módosíthatod.');
+  };
+  actions.appendChild(dupBtn);
   if (!p._isNew){
     const delBtn = el('button','btn danger','Tréning törlése');
     delBtn.onclick = () => {
