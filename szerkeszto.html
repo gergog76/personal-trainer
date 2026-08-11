@@ -827,7 +827,8 @@ function renderImportSummary(summary){
   const otherErrors = summary.errors || [];
 
   if (newEx.length === 0 && newPr.length === 0){
-    parts.push('<p>Nincs importálandó új elem.</p>');
+    parts.push('<p>Nincs importálandó új elem - a <code>pending-content/</code> mappa üres vagy nem tartalmaz még feldolgozatlan gyakorlatot/programot.</p>');
+    toast('Nincs importálandó új elem.');  
   } else {
     if (newEx.length){
       parts.push(`<p><strong>Új gyakorlatok (${newEx.length}):</strong></p><ul>`);
