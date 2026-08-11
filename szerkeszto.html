@@ -165,6 +165,7 @@
   <h1>Edzés-szerkesztő</h1>
   <div class="status" id="statusEl">Betöltés…</div>
   <div style="display:flex; gap:8px;">
+    <button class="btn" id="btnImportPending">Hiányzó elemek importálása</button>
     <button class="btn" id="btnReload">Frissítés</button>
     <button class="btn primary" id="btnSave" disabled>Mentés</button>
   </div>
@@ -213,6 +214,16 @@
 <div class="modal-backdrop" id="exModal">
   <div class="modal">
     <h3 id="exModalTitle">Gyakorlat szerkesztése</h3>
+    <div class="modal-backdrop" id="importModal">
+      <div class="modal">
+        <h3>Hiányzó elemek importálása</h3>
+        <div id="importModalBody" style="max-height:50vh; overflow-y:auto; font-size:13.5px;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+          <button class="btn" id="importModalCancel">Mégse</button>
+          <button class="btn primary" id="importModalConfirm" style="display:none;">Importálás</button>
+        </div>
+      </div>
+    </div>
     <div id="exForm"></div>
     <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn" id="exCancel">Mégse</button>
@@ -449,7 +460,25 @@ function renderLeft(){
     c.appendChild(section);
   });
 
-  const actions = el('div'); actions.style.cssText = 'margin-top:20px; display:flex; gap:8px;';
+const actions = el('div'); actions.style.cssText = 'margin-top:20px; display:flex; gap:8px;';
+  const dupBtn = el('button','btn','Duplikálás');
+  dupBtn.onclick = () => {
+    const copy = JSON.parse(JSON.stringify(p));
+    delete copy._isNew;
+    let baseId = slugify(p.name) + '-masolat';
+    let newId = baseId, n = 2;
+    while (data.programs.some(x => x.id === newId)) newId = baseId + '-' + (n++);
+    copy.id = newId;
+    copy.name = p.name + ' (másolat)';
+    copy._isNew = true;
+    data.programs.push(copy);
+    editingProgram = copy;
+    selectedProgramId = null;
+    setDirty(true);
+    renderMid(); renderLeft(); renderRight();
+    toast('Tréning duplikálva – nevezd át, és a gyakorlatokat is módosíthatod.');
+  };
+  actions.appendChild(dupBtn);
   if (!p._isNew){
     const delBtn = el('button','btn danger','Tréning törlése');
     delBtn.onclick = () => {
@@ -768,6 +797,119 @@ document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => showTab(b.d
 
 $('#btnNewProgram').onclick = newProgram;
 $('#btnSave').onclick = saveData;
+/* ---------- Hiányzó elemek importálása (pending-content -> Blobs) ---------- */
+
+function getEditToken(){
+  // Ugyanaz a token-forrás, mint a Mentés gombnál - nincs duplikálva.
+  return localStorage.getItem('szerkeszto_token');
+}
+
+function ensureEditToken(){
+  let token = getEditToken();
+  if (!token){
+    token = prompt('Add meg a szerkesztő jelszót:');
+    if (!token) return null;
+    token = token.trim();
+    localStorage.setItem('szerkeszto_token', token);
+  }
+  return token;
+}
+
+
+function renderImportSummary(summary){
+  const body = $('#importModalBody');
+  const parts = [];
+
+  const newEx = summary.exercises.filter(r => r.status === 'new');
+  const newPr = summary.programs.filter(r => r.status === 'new');
+  const skipped = [...summary.exercises, ...summary.programs].filter(r => r.status === 'skipped');
+  const errors = [...summary.exercises, ...summary.programs].filter(r => r.status === 'error');
+  const otherErrors = summary.errors || [];
+
+  if (newEx.length === 0 && newPr.length === 0){
+    parts.push('<p>Nincs importálandó új elem - a <code>pending-content/</code> mappa üres vagy nem tartalmaz még feldolgozatlan gyakorlatot/programot.</p>');
+    toast('Nincs importálandó új elem.');  
+  } else {
+    if (newEx.length){
+      parts.push(`<p><strong>Új gyakorlatok (${newEx.length}):</strong></p><ul>`);
+      newEx.forEach(r => parts.push(`<li>${escapeHtml(r.name)} <span style="color:var(--text-dim)">(${escapeHtml(r.file)})</span></li>`));
+      parts.push('</ul>');
+    }
+    if (newPr.length){
+      parts.push(`<p><strong>Új programok (${newPr.length}):</strong></p><ul>`);
+      newPr.forEach(r => parts.push(`<li>${escapeHtml(r.name)} <span style="color:var(--text-dim)">(${escapeHtml(r.file)})</span></li>`));
+      parts.push('</ul>');
+    }
+  }
+
+  if (skipped.length){
+    parts.push(`<p><strong>Kihagyva (${skipped.length}):</strong></p><ul class="warn-list">`);
+    skipped.forEach(r => parts.push(`<li>${escapeHtml(r.file)} - ${escapeHtml(r.reason)}</li>`));
+    parts.push('</ul>');
+  }
+
+  if (errors.length || otherErrors.length){
+    parts.push(`<p><strong style="color:var(--warn)">Hibák:</strong></p><ul class="warn-list">`);
+    errors.forEach(r => parts.push(`<li>${escapeHtml(r.file)} - ${escapeHtml(r.reason)}</li>`));
+    otherErrors.forEach(e => parts.push(`<li>${escapeHtml(e.file)} - ${escapeHtml(e.error)}</li>`));
+    parts.push('</ul>');
+  }
+
+  body.innerHTML = parts.join('');
+  $('#importModalConfirm').style.display = (newEx.length || newPr.length) ? 'inline-block' : 'none';
+}
+
+async function fetchImportSummary(mode){
+  const token = ensureEditToken();
+  if (!token) return null;
+  const res = await fetch(`/api/apply-pending?mode=${mode}`, {
+    method: mode === 'apply' ? 'POST' : 'GET',
+    headers: { 'x-edit-token': token }
+  });
+  if (res.status === 401){
+    localStorage.removeItem('szerkeszto_token');
+    toast('Hibás jelszó - próbáld újra.', true);
+    return null;
+  }
+  if (!res.ok){
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.error || ('HTTP ' + res.status));
+  }
+  return res.json();
+}
+
+$('#btnImportPending').onclick = async () => {
+  $('#importModalBody').innerHTML = '<p>Betöltés…</p>';
+  $('#importModalConfirm').style.display = 'none';
+  $('#importModal').classList.add('open');
+  try{
+    const summary = await fetchImportSummary('preview');
+    if (summary) renderImportSummary(summary);
+  } catch(err){
+    $('#importModalBody').innerHTML = `<p style="color:var(--warn)">${escapeHtml(err.message)}</p>`;
+  }
+};
+
+$('#importModalCancel').onclick = () => $('#importModal').classList.remove('open');
+
+$('#importModalConfirm').onclick = async () => {
+  $('#importModalConfirm').disabled = true;
+  $('#importModalBody').innerHTML = '<p>Importálás…</p>';
+  try{
+    const result = await fetchImportSummary('apply');
+    if (result){
+      $('#importModalBody').innerHTML = result.applied
+        ? `<p>Sikeres import: ${result.newExerciseCount} gyakorlat, ${result.newProgramCount} program.</p><p>Kattints a Frissítésre a szerkesztő listájának frissítéséhez.</p>`
+        : `<p>${escapeHtml(result.message || 'Nincs importálandó elem.')}</p>`;
+      $('#importModalConfirm').style.display = 'none';
+      toast('Import kész.');
+    }
+  } catch(err){
+    $('#importModalBody').innerHTML = `<p style="color:var(--warn)">${escapeHtml(err.message)}</p>`;
+  } finally {
+    $('#importModalConfirm').disabled = false;
+  }
+};  
 $('#btnReload').onclick = () => {
   if (dirty && !confirm('Nem mentett módosításaid vannak. Elveted őket és újratöltöd a szervertől?')) return;
   selectedProgramId = null; editingProgram = null; setDirty(false);
