@@ -815,9 +815,6 @@ function ensureEditToken(){
   return token;
 }
 
-function escapeHtml(str){
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 
 function renderImportSummary(summary){
   const body = $('#importModalBody');
