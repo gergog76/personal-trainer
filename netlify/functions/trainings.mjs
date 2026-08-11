@@ -13,14 +13,16 @@ const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 const EDIT_TOKEN = process.env.EDIT_TOKEN;
 
 export default async (req, context) => {
-  if (!EDIT_TOKEN) {
-    return new Response(
-      JSON.stringify({ error: "Szerver konfigurációs hiba: EDIT_TOKEN env var hiányzik." }),
-      { status: 500, headers: jsonHeaders }
-    );
-  }
-
   if (req.method === "PUT" || req.method === "POST") {
+    // Az EDIT_TOKEN hiánya csak írásnál számít hibának - olvasásnál (GET)
+    // sose blokkoljon, mert azt token nélkül hívja a szerkesztő betöltéskor
+    // és maga a trainer app (index.html) is.
+    if (!EDIT_TOKEN) {
+      return new Response(
+        JSON.stringify({ error: "Szerver konfigurációs hiba: EDIT_TOKEN env var hiányzik." }),
+        { status: 500, headers: jsonHeaders }
+      );
+    }
     const token = (req.headers.get("x-edit-token") || "").trim();
     if (token !== EDIT_TOKEN) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
