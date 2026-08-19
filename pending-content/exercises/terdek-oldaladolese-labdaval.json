@@ -1,0 +1,13 @@
+{
+  "id": "terdek-oldaladolese-labdaval",
+  "name": "Térdek oldalra döntése labdával",
+  "category": "main",
+  "equipment": [],
+  "description": "Hanyatt fekve, mindkét láb asztallap-pozícióban (csípő és térd kb. 90 fokban hajlítva), egy felfújható labda a két térd között beszorítva. A teljes alsó testet csípőből, egyben döntsd oldalra – a comb és a lábszár együtt mozog, mint egy egység –, majd térj vissza középre, és döntsd a másik oldalra. A felsőtest és a derék végig stabilan, mozdulatlanul a talajon marad, a mozgás csak a csípőtől lefelé történik. A labda nem eshet ki a térdek közül.",
+  "image": "images/terdekoldaladolese.webp",
+  "duration_sec": 40,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": ["also-hat"]
+}
