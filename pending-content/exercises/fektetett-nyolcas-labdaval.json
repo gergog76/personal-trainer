@@ -1,0 +1,13 @@
+{
+  "id": "fektetett-nyolcas-labdaval",
+  "name": "Fektetett nyolcas labdával",
+  "category": "main",
+  "equipment": [],
+  "description": "Feküdj háton, a felfújható labdát tedd a nyakad alá, kicsit a vállak felé csúsztatva, hogy a fejed szabadon hátra tudjon lógni. Lassan, kontrolláltan rajzolj a fejeddel fektetett nyolcasokat (vízszintes ∞ alak) a levegőbe, végig finoman a labdára támaszkodva. Kis mozgástartományban, egyenletes tempóban dolgozz. Néhány kör után válts irányt. Ha szédülsz vagy éles fájdalmat érzel, hagyd abba.",
+  "image": "images/fektetettnyolcaslabdaval.webp",
+  "duration_sec": 40,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": ["nyak"]
+}
