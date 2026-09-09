@@ -1973,6 +1973,9 @@ window.addEventListener('unhandledrejection', function(e){
   let roundsByWorkout = {};
   let currentWorkoutId = 'core-alap';
   let WARMUP = [], MAIN = [], COOLDOWN = [];
+  // A fő blokk körönként váltakozó gyakorlatait feloldó függvény
+  // (workout-váltáskor és adatbetöltéskor frissül). Lásd makeMainResolver.
+  let mainForRound = null;
   let ROUNDS_MIN = 1, ROUNDS_MAX = 5;
   let ROUNDS = 2;
   let WORK_SEC = 40, REST_SEC = 10, QUICK_REST_SEC = 5, ROUND_REST_SEC = 60, PREP_SEC = 10, BLOCK_TRANSITION_SEC = 10;
@@ -2027,6 +2030,37 @@ window.addEventListener('unhandledrejection', function(e){
     return out;
   }
 
+  // Egy fő-blokk elemhez a körhöz (1-alapú) tartozó gyakorlatot adja vissza.
+  // A "variáns-lánc" = [exerciseId, ...variants]; az N. kör a lánc
+  // (N-1) % hossz indexű elemét használja, tehát a variánsok körről körre
+  // ismétlődnek (2 variáns: A, B, A, B, ...). Hiányzó hivatkozásnál az
+  // alap exerciseId-re esik vissza.
+  function pickVariantExercise(item, round, exercisesById){
+    const chain = [item.exerciseId].concat(Array.isArray(item.variants) ? item.variants : []);
+    const r = Math.max(1, round | 0);
+    const idx = (r - 1) % chain.length;
+    return exercisesById[chain[idx]] || exercisesById[item.exerciseId];
+  }
+
+  // A fő blokk nyers elemeiből olyan függvényt készít, amely egy adott körre
+  // kibontott (a régi lapos formátumú) gyakorlat-tömböt ad vissza. Körönként
+  // gyorsítótáraz. A szerkesztő gondoskodik róla, hogy egy pozíció összes
+  // variánsa azonos oldalisággal (sided) bírjon, így a lépésszám köröktől
+  // független marad.
+  function makeMainResolver(rawMain, exercisesById){
+    const cache = {};
+    return function mainRound(round){
+      const r = Math.max(1, round | 0);
+      if (cache[r]) return cache[r];
+      const out = [];
+      (rawMain || []).forEach(item => {
+        out.push(...expandBlockItem(item, pickVariantExercise(item, r, exercisesById)));
+      });
+      cache[r] = out;
+      return out;
+    };
+  }
+
   function applyTrainingData(data){
     const exercisesById = data.exercises || {};
     const c = data.constants || {};
@@ -2040,6 +2074,7 @@ window.addEventListener('unhandledrejection', function(e){
         name: p.name,
         warmup: expandBlock(blocks.warmup, exercisesById),
         main: expandBlock(blocks.main, exercisesById),
+        mainForRound: makeMainResolver(blocks.main, exercisesById),
         cooldown: expandBlock(blocks.cooldown, exercisesById)
       };
       WORKOUT_ORDER.push({ id: p.id, name: p.name });
@@ -2058,6 +2093,7 @@ window.addEventListener('unhandledrejection', function(e){
     currentWorkoutId = (WORKOUT_ORDER[0] && WORKOUT_ORDER[0].id) || 'core-alap';
     WARMUP = WORKOUTS[currentWorkoutId].warmup;
     MAIN = WORKOUTS[currentWorkoutId].main;
+    mainForRound = WORKOUTS[currentWorkoutId].mainForRound;
     COOLDOWN = WORKOUTS[currentWorkoutId].cooldown;
     ROUNDS = roundsByWorkout[currentWorkoutId];
   }
@@ -2096,6 +2132,13 @@ window.addEventListener('unhandledrejection', function(e){
     return (item && item.quickRest) ? QUICK_REST_SEC : REST_SEC;
   }
 
+  // A fő blokk i. lépése az adott körben (1-alapú). Ha nincs feloldó vagy a
+  // kör tömbje rövidebb (nem várt oldalisági eltérés), az 1. körre esik vissza.
+  function mainItem(i, round){
+    const arr = (mainForRound && mainForRound(round)) || MAIN;
+    return arr[i] || MAIN[i];
+  }
+
   function buildQueue(){
     const q = [{ kind:'prep', duration: PREP_SEC }];
 
@@ -2109,8 +2152,8 @@ window.addEventListener('unhandledrejection', function(e){
 
     for (let r = 1; r <= ROUNDS; r++){
       for (let i = 0; i < MAIN.length; i++){
-        q.push({ kind:'main_work', duration: (MAIN[i].duration || WORK_SEC), index:i, round:r });
-        if (i < MAIN.length - 1) q.push({ kind:'main_rest', duration: restDurationBefore(MAIN[i+1]), nextIndex:i+1, round:r });
+        q.push({ kind:'main_work', duration: (mainItem(i, r).duration || WORK_SEC), index:i, round:r });
+        if (i < MAIN.length - 1) q.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i+1, r)), nextIndex:i+1, round:r });
       }
       if (r < ROUNDS) q.push({ kind:'round_rest', duration: ROUND_REST_SEC, round:r });
     }
@@ -2242,13 +2285,13 @@ window.addEventListener('unhandledrejection', function(e){
 
   function getCardExercise(phase){
     switch(phase.kind){
-      case 'prep': return WARMUP.length ? WARMUP[0] : MAIN[0];
+      case 'prep': return WARMUP.length ? WARMUP[0] : mainItem(0, 1);
       case 'warmup': return WARMUP[phase.index];
       case 'warmup_rest': return WARMUP[phase.nextIndex];
-      case 'block_rest': return phase.nextBlock === 'main' ? MAIN[0] : COOLDOWN[0];
-      case 'main_work': return MAIN[phase.index];
-      case 'main_rest': return MAIN[phase.nextIndex];
-      case 'round_rest': return MAIN[0];
+      case 'block_rest': return phase.nextBlock === 'main' ? mainItem(0, 1) : COOLDOWN[0];
+      case 'main_work': return mainItem(phase.index, phase.round);
+      case 'main_rest': return mainItem(phase.nextIndex, phase.round);
+      case 'round_rest': return mainItem(0, phase.round + 1);
       case 'cooldown': return COOLDOWN[phase.index];
       case 'cooldown_rest': return COOLDOWN[phase.nextIndex];
       default: return null;
@@ -2259,7 +2302,7 @@ window.addEventListener('unhandledrejection', function(e){
     switch(phase.kind){
       case 'prep': return WARMUP.length
         ? 'Bemelegítés: <b>' + WARMUP[0].name + '</b>'
-        : 'Következő: <b>' + MAIN[0].name + '</b>';
+        : 'Következő: <b>' + mainItem(0, 1).name + '</b>';
       case 'warmup':
         return phase.index < WARMUP.length - 1
           ? 'Következő: <b>' + WARMUP[phase.index+1].name + '</b>'
@@ -2267,15 +2310,15 @@ window.addEventListener('unhandledrejection', function(e){
       case 'warmup_rest': return 'Következő: <b>' + WARMUP[phase.nextIndex].name + '</b>';
       case 'block_rest':
         return phase.nextBlock === 'main'
-          ? 'Következő: <b>' + MAIN[0].name + '</b>'
+          ? 'Következő: <b>' + mainItem(0, 1).name + '</b>'
           : 'Következő: <b>' + COOLDOWN[0].name + '</b>';
       case 'main_work': {
-        if (phase.index < MAIN.length - 1) return 'Következő: <b>' + MAIN[phase.index+1].name + '</b>';
+        if (phase.index < MAIN.length - 1) return 'Következő: <b>' + mainItem(phase.index+1, phase.round).name + '</b>';
         if (phase.round < ROUNDS) return 'Kör vége, pihenő következik';
         return 'A levezetés következik';
       }
-      case 'main_rest': return 'Következő: <b>' + MAIN[phase.nextIndex].name + '</b>';
-      case 'round_rest': return 'Következő kör: <b>' + MAIN[0].name + '</b>';
+      case 'main_rest': return 'Következő: <b>' + mainItem(phase.nextIndex, phase.round).name + '</b>';
+      case 'round_rest': return 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
       case 'cooldown':
         return phase.index < COOLDOWN.length - 1
           ? 'Következő: <b>' + COOLDOWN[phase.index+1].name + '</b>'
@@ -2793,7 +2836,7 @@ window.addEventListener('unhandledrejection', function(e){
         case 'main_work': {
           const title = 'Fő kör' + (ROUNDS > 1 ? ' – ' + phase.round + '. kör' : '');
           if (!current || current.title !== title) startSection(title);
-          pushRow(MAIN[phase.index].name, phase.duration, false);
+          pushRow(mainItem(phase.index, phase.round).name, phase.duration, false);
           break;
         }
         case 'main_rest':
@@ -2887,6 +2930,7 @@ window.addEventListener('unhandledrejection', function(e){
     const w = WORKOUTS[id];
     WARMUP = w.warmup;
     MAIN = w.main;
+    mainForRound = w.mainForRound;
     COOLDOWN = w.cooldown;
     ROUNDS = roundsByWorkout[id];
     appTitle.textContent = w.name;
@@ -2946,13 +2990,13 @@ window.addEventListener('unhandledrejection', function(e){
 
     if (phase.kind === 'main_work'){
       for (let i = phase.index + 1; i < MAIN.length; i++){
-        tail.push({ kind:'main_rest', duration: restDurationBefore(MAIN[i]), nextIndex:i, round });
-        tail.push({ kind:'main_work', duration:(MAIN[i].duration || WORK_SEC), index:i, round });
+        tail.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i, round)), nextIndex:i, round });
+        tail.push({ kind:'main_work', duration:(mainItem(i, round).duration || WORK_SEC), index:i, round });
       }
     } else if (phase.kind === 'main_rest'){
       for (let i = phase.nextIndex; i < MAIN.length; i++){
-        if (i > phase.nextIndex) tail.push({ kind:'main_rest', duration: restDurationBefore(MAIN[i]), nextIndex:i, round });
-        tail.push({ kind:'main_work', duration:(MAIN[i].duration || WORK_SEC), index:i, round });
+        if (i > phase.nextIndex) tail.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i, round)), nextIndex:i, round });
+        tail.push({ kind:'main_work', duration:(mainItem(i, round).duration || WORK_SEC), index:i, round });
       }
     }
 
@@ -2964,8 +3008,8 @@ window.addEventListener('unhandledrejection', function(e){
           tail.push({ kind:'round_rest', duration: ROUND_REST_SEC, round: r - 1 });
         }
         for (let i = 0; i < MAIN.length; i++){
-          if (i > 0) tail.push({ kind:'main_rest', duration: restDurationBefore(MAIN[i]), nextIndex:i, round:r });
-          tail.push({ kind:'main_work', duration:(MAIN[i].duration || WORK_SEC), index:i, round:r });
+          if (i > 0) tail.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i, r)), nextIndex:i, round:r });
+          tail.push({ kind:'main_work', duration:(mainItem(i, r).duration || WORK_SEC), index:i, round:r });
         }
       }
     }
