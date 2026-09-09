@@ -38,9 +38,12 @@ Central JSON document (served via `/api/trainings`, edited via `szerkeszto.html`
   programs: [
     { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...] } }
     // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
+    // main block items only: variants?: ["exId2", "exId3", ...]
   ]
 }
 ```
+
+- **Per-round exercise variation (`variants`)**: a `main` block item may carry `variants: [...]` — a list of extra exercise slugs. The "variant chain" is `[exerciseId, ...variants]`; round *N* (1-based) uses chain index `(N-1) % chain.length`, so the exercises cycle round to round (2 variants ⇒ A, B, A, B…). Timer-side this is resolved lazily/cached by `makeMainResolver` in `index.html` (`mainItem(i, round)` replaces the old `MAIN[i]`). The editor enforces that every exercise in one chain shares the same `sided` flag, so the per-position step count stays constant across rounds. Warmup/cooldown do not support this (they run once).
 
 - Exercise IDs are slugs generated from the Hungarian name (accent-stripped, lowercased, hyphenated) — same `slugify` logic duplicated in `szerkeszto.html` and `apply-pending.mjs`.
 - `sided` exercises (e.g. side plank, single-arm stretch) get expanded into two timer steps (left/right) at runtime by `index.html`'s `expandBlockItem`.
