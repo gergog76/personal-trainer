@@ -107,6 +107,9 @@
     padding:7px 9px; border:1px solid var(--line); border-radius:8px; margin-bottom:6px;
   }
   .lib-item:hover{ background:var(--surface-2); }
+  .lib-item.pick{ cursor:pointer; }
+  .lib-item.pick:hover{ background:var(--surface-3); border-color:var(--accent); }
+  .lib-pick-hint{ font-size:12px; color:var(--accent); margin:6px 0 2px; line-height:1.4; }
   .lib-item .li-info{ flex:1; min-width:0; }
   .lib-item .li-name{ font-size:13px; font-weight:560; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lib-item .li-tags{ font-size:11px; color:var(--text-dim); }
@@ -667,17 +670,22 @@ function renderLibList(){
     .filter(([id, ex]) => !libTagFilterState.size || (ex.muscle_groups||[]).some(t => libTagFilterState.has(t)))
     .sort((a,b) => a[1].name.localeCompare(b[1].name, 'hu'))
     .forEach(([id, ex]) => {
-      const row = el('div','lib-item');
+      const row = el('div','lib-item' + (variantTarget ? ' pick' : ''));
       const info = el('div','li-info');
       info.appendChild(el('div','li-name', ex.name));
       info.appendChild(el('div','li-tags', (ex.muscle_groups||[]).map(t => (data.muscle_group_taxonomy||{})[t]||t).join(', ') || '—'));
       row.appendChild(info);
-      const addBtn = el('button','btn small primary', variantTarget ? '🔁' : '→');
+      const addBtn = el('button','btn small primary', variantTarget ? '🔁 variáns' : '→');
       addBtn.title = variantTarget ? 'Hozzáadás kör-variánsként' : ('Hozzáadás: ' + CATEGORIES[libraryTargetBlock]);
       addBtn.onclick = (e) => { e.stopPropagation(); addExerciseToTargetBlock(id); };
       row.appendChild(addBtn);
       attachTooltip(row, ex);
-      row.addEventListener('click', () => openExerciseEditor(id, false));
+      // Variáns-választó módban a teljes sor a "hozzáadás" gomb; egyébként a
+      // sorra kattintás a gyakorlat könyvtári adatlapját nyitja szerkesztésre.
+      row.addEventListener('click', () => {
+        if (variantTarget) addExerciseToTargetBlock(id);
+        else openExerciseEditor(id, false);
+      });
       list.appendChild(row);
     });
   if (!list.children.length) list.appendChild(el('div','empty-hint','Nincs találat.'));
@@ -690,10 +698,16 @@ function renderLibTargetSelector(){
   wrap.innerHTML = '';
   if (variantTarget){
     const baseEx = data.exercises[variantTarget.exerciseId];
-    wrap.appendChild(el('span','', '🔁 Kör-variáns ehhez: ' + (baseEx ? baseEx.name : variantTarget.exerciseId)));
+    const chain = [variantTarget.exerciseId].concat(variantTarget.variants || []);
+    wrap.appendChild(el('span','', '🔁 Kör-variáns ehhez: ' + (baseEx ? baseEx.name : variantTarget.exerciseId)
+      + ' (' + chain.length + '. kör lesz)'));
     const cancel = el('div','tag on','Kész / mégse');
     cancel.onclick = () => { variantTarget = null; renderLibraryPanel(); renderLeft(); };
     wrap.appendChild(cancel);
+    const hint = el('div','lib-pick-hint',
+      'Kattints egy gyakorlatra a listában – az lesz a következő kör gyakorlata ezen a helyen. Nem szerkeszti a gyakorlatot.');
+    hint.style.flexBasis = '100%';
+    wrap.appendChild(hint);
     return;
   }
   wrap.appendChild(el('span','','Új gyakorlat ide kerül:'));
