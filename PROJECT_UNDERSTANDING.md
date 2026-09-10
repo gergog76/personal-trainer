@@ -1,87 +1,134 @@
 # Project Understanding — Derékbarát edzés (Back-friendly Workout App)
 
-Generated: 2026-09-08. Understanding based on reading source files directly — treat as a snapshot, re-verify against code before relying on specifics.
+Updated: 2026-09-10. Based on reading source directly — treat as a snapshot, re-verify against code before relying on specifics.
 
 ## What this is
 
-A small, single-purpose Hungarian-language web app for guiding a user (likely someone with back issues — "derékbarát" = "back-friendly") through timed exercise routines (warmup → main → cooldown, in rounds), plus a companion admin editor to manage the exercise library and workout programs. No frontend framework or build step — plain HTML/CSS/JS files deployed as static assets, backed by a couple of Netlify serverless functions and Netlify Blobs as the datastore.
+A small, single-purpose Hungarian-language web app for guiding a user (likely someone with back issues — "derékbarát" = "back-friendly") through timed exercise routines (warmup → main → cooldown, in rounds), plus a companion admin editor to manage the exercise library and workout programs. No frontend framework or bundler — plain HTML/CSS/JS deployed as static assets on Netlify, with one serverless function used only by the editor to commit changes.
 
-## Repo layout
+## Source of truth: the `data/` directory
 
-- `index.html` (~129KB) — **the trainer/timer app**, the main deployed page. Identical to `20260808-1056-derekbarat-edzes-idozito.html` (a dated snapshot/backup left in the repo root).
-- `szerkeszto.html` (~41KB) — **the admin editor app**, for CRUD on exercises and programs. `20260808-1056-derekbarat-edzes-szerkeszto.html` is an older, now-diverged snapshot of this file (also left in repo root).
-- `images/` — `.webp` illustrations for exercises, referenced by relative path from the JSON data (e.g. `images/birddog.webp`).
-- `netlify/functions/` — the only backend code:
-  - `trainings.mjs` — GET/PUT/POST `/api/trainings`, backed by Netlify Blobs (store `derekbarat-adatok`, key `trainings`). GET is public/unauthenticated (both apps need it on load). PUT/POST require header `x-edit-token` matching `process.env.EDIT_TOKEN`; on first-ever GET with empty store it seeds from `_seed-data.mjs`.
-  - `apply-pending.mjs` — `/api/apply-pending`, an idempotent importer: reads `pending-content/exercises/*.json` and `pending-content/programs/*.json` from the `main` branch via the GitHub Contents API (needs `GITHUB_TOKEN`, read-only fine-grained PAT) and merges any not-yet-present items into the Blobs store. Supports `?mode=preview` (dry run) and `?mode=apply`. Same `x-edit-token` auth as above.
-  - `_seed-data.mjs` — static fallback/seed dataset (`constants`, `exercises` object keyed by slug, `programs` array), used only to initialize an empty Blobs store.
-- `netlify.toml` — `functions = "netlify/functions"`, `publish = "."` (whole repo root is the publish directory).
-- `package.json` — deps only: `@netlify/blobs`, `@netlify/functions`. No build/test scripts, no bundler.
-- No README, no tests, no CI config found.
+**All training data lives in the git repo** as many small JSON files under `data/`. There is no runtime database. The old Netlify Blobs store and the `/api/trainings` + `/api/apply-pending` functions were removed in favour of this.
+
+```
+data/
+  constants.json              timer constants (work_sec, rest_sec, …, rounds_min/max)
+  muscle-groups.json          muscle_group_taxonomy: { "<key>": "<magyar címke>" }
+  exercises/<id>.json         one exercise; the FILENAME is the id (no "id" field in the body)
+  programs/_order.json        ["<program-id>", …] — the display order of programs
+  programs/<id>.json          one program; filename is the id
+  trainings.json              GENERATED at deploy time, gitignored — do not edit or commit
+```
+
+`lib/data-schema.mjs` is the single place that knows how to split the dataset into files
+(`datasetToFiles`), reassemble it (`filesToDataset`), and validate it (`validate`). The
+build script, the save function, and the migration script all import it.
+
+## Build
+
+`scripts/build-data.mjs` reads `data/**`, validates, and writes `data/trainings.json`.
+It is the Netlify build command (`netlify.toml`). It runs on every deploy (production and
+PR deploy previews) and can be run locally with `node scripts/build-data.mjs`.
+
+**On a validation error the build exits non-zero, so the deploy fails and the previous
+working version stays live.** Broken exercise references, missing image files, `data:` URLs,
+and slug/filename mismatches all fail the build.
+
+The generated file carries a `_meta` block (`{ context, commit, generated_at }`) filled
+from Netlify's `CONTEXT` / `COMMIT_REF` env vars. The editor reads it to know whether it is
+running on a PR preview (can save) or production (read-only), and which commit it loaded.
+
+## Editing workflow
+
+The editor (`szerkeszto.html`) only allows saving when served from a **`dev` → `main` PR
+deploy preview** (or a `dev` branch deploy, if one is ever enabled). Production is read-only.
+
+1. Open (or keep open) a PR from `dev` to `main`.
+2. Edit on the PR's deploy preview URL. **Save** POSTs the whole dataset to `/api/save-data`.
+3. `save-data.mjs` diffs it against the current `dev` tree and pushes ONE atomic commit to
+   `dev` via the GitHub Git Data API (blob → tree → commit → ref). Changed JSON files and
+   any newly uploaded images land in the same commit.
+4. The PR preview rebuilds (~1 min) and shows the change. The PR diff is the content change,
+   reviewable.
+5. Merge the PR → production deploy.
+
+Concurrency: the editor loads the `dev` head SHA and sends it as `baseSha`. If `dev` moved
+(another save, or a running build), the function returns 409 and the editor tells you to
+reload. New exercises can also be added by hand: drop a `data/exercises/<slug>.json` file
+and commit it.
 
 ## Data model
 
-Central JSON document (served via `/api/trainings`, edited via `szerkeszto.html`, consumed by `index.html`):
-
 ```
-{
-  constants: { work_sec, rest_sec, quick_rest_sec, round_rest_sec, prep_sec, block_transition_sec, rounds_min, rounds_max },
-  exercises: {
-    "<slug-id>": {
-      name, category ("warmup"|"main"|"cooldown"), equipment: [],
-      description, image, duration_sec?, subtitle?, quick_rest_default,
-      mirror, sided, side_labels?: {left, right}, description_switch?,
-      image_right?, muscle_groups: [...], legacy_pose_a/b? (old inline SVG stick-figure poses, superseded by images),
-      source_reference?
-    }, ...
-  },
-  programs: [
-    { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...] } }
-    // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
-    // main block items only: variants?: ["exId2", "exId3", ...]
-  ]
+constants: { work_sec, rest_sec, quick_rest_sec, round_rest_sec, prep_sec,
+             block_transition_sec, rounds_min, rounds_max }
+exercises: {
+  "<slug-id>": {
+    name, category ("warmup"|"main"|"cooldown"), equipment: [],
+    description, image, duration_sec?, subtitle?, quick_rest_default,
+    mirror, sided, side_labels?: {left, right}, description_switch?,
+    image_right?, muscle_groups: [...],
+    legacy_pose_a/b? (old inline SVG stick-figure poses, superseded by images),
+    source_reference?
+  }, ...
 }
+programs: [
+  { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...] } }
+  // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
+  // main block items only: variants?: ["exId2", "exId3", ...]
+]
 ```
 
-- **Per-round exercise variation (`variants`)**: a `main` block item may carry `variants: [...]` — a list of extra exercise slugs. The "variant chain" is `[exerciseId, ...variants]`; round *N* (1-based) uses chain index `(N-1) % chain.length`, so the exercises cycle round to round (2 variants ⇒ A, B, A, B…). Timer-side this is resolved lazily/cached by `makeMainResolver` in `index.html` (`mainItem(i, round)` replaces the old `MAIN[i]`). The editor enforces that every exercise in one chain shares the same `sided` flag, so the per-position step count stays constant across rounds. Warmup/cooldown do not support this (they run once).
-
-- Exercise IDs are slugs generated from the Hungarian name (accent-stripped, lowercased, hyphenated) — same `slugify` logic duplicated in `szerkeszto.html` and `apply-pending.mjs`.
-- `sided` exercises (e.g. side plank, single-arm stretch) get expanded into two timer steps (left/right) at runtime by `index.html`'s `expandBlockItem`.
-- Editors can add content out-of-band as JSON files under `pending-content/exercises/` or `pending-content/programs/` committed to `main`, then trigger `/api/apply-pending` to merge them in without hand-editing the live Blobs data.
+- **Per-round exercise variation (`variants`)**: a `main` block item may carry `variants: [...]`.
+  The "variant chain" is `[exerciseId, ...variants]`; round *N* (1-based) uses chain index
+  `(N-1) % chain.length`, so exercises cycle round to round. Timer-side this is resolved by
+  `makeMainResolver` in `index.html`. `validate` enforces that every exercise in one chain
+  shares the same `sided` flag, so the per-position step count stays constant across rounds.
+- Exercise IDs are slugs of the Hungarian name (accent-stripped, lowercased, hyphenated) —
+  `slugify` in `lib/data-schema.mjs`, the one remaining copy.
+- `sided` exercises get expanded into two timer steps (left/right) at runtime by
+  `index.html`'s `expandBlockItem`.
 
 ## `index.html` — the timer app
 
-- Single-file app: inline `<style>` (custom CSS variables for a dark green/teal theme, `--bg`, `--work`, `--rest`, `--prep` colors) + inline `<script>` (~2500+ lines).
-- On load, fetches `/api/trainings`; on failure falls back to an embedded `FALLBACK_TRAININGS_DATA` constant baked into the page (so the app still works if the API/Blobs is down) and shows an offline banner.
-- Core runtime concepts:
-  - `WORKOUTS` / `WORKOUT_ORDER` — built from `programs`, switchable via a drawer menu (`renderWorkoutList`, `switchWorkout`).
-  - A flattened `queue` of phases (prep, warmup/main/cooldown work + rest steps, round rests, block transitions) built by `buildQueue()`; `qIndex` tracks position.
-  - Round count is user-adjustable within `[rounds_min, rounds_max]`, with `rebuildQueueForNewRounds()` re-slicing the queue mid-session.
-  - Rendering: circular progress ring (SVG stroke-dashoffset via `CIRC = 2πr`), exercise card with image or legacy inline-SVG stick figure pose, next-exercise hint, session summary modal (`buildSummaryHTML`).
-  - Audio/feedback: Web Audio beeps (`beep`, `playProgressBeeps`, tone by frequency), an `<audio>` element pool for beep playback resilience (`elementBeep`, `beepPool`), Hungarian text-to-speech announcing the next exercise (`speechSynthesis`, `pickHuVoice`), and a "keep screen awake" hack using a silent looping `<video>`/`<audio>` plus Wake Lock API fallback (`startKeepAwakeMedia`, `keepAwakeHeartbeat`, `releaseWakeLock`).
-  - Play/pause/back/forward controls, mute toggle, rounds +/- controls, hamburger drawer to switch workouts.
-- No auth needed — it's the public-facing page anyone doing the workout uses.
+- Single-file app: inline `<style>` + inline `<script>`.
+- On load, fetches `data/trainings.json` (`cache: 'no-cache'`). On failure it shows an error
+  banner and stops — there is no embedded fallback copy any more (the JSON ships from the
+  same deploy as the HTML, so if the page loaded, the data loads).
+- Runtime concepts unchanged: `WORKOUTS` / `WORKOUT_ORDER` from `programs`, a flattened
+  `queue` of phases from `buildQueue()`, circular SVG progress ring, Web Audio beeps,
+  Hungarian text-to-speech, Wake Lock + silent-media keep-awake hack.
+- No auth — the public-facing page.
 
 ## `szerkeszto.html` — the editor app
 
-- Also single-file, inline CSS + JS (~1000+ lines).
-- Auth: prompts for an edit token on first write attempt (`ensureEditToken`), stores it in `localStorage['szerkeszto_token']`, sends it as `x-edit-token` header on PUT to `/api/trainings`; clears it from localStorage on a 401.
-- Three-pane layout implied by `renderLeft` / `renderMid` / `renderRight`:
-  - Mid: list of programs (cards), `programStats` shows totals.
-  - Left: edit form for the selected program (name, id, rounds, per-block exercise lists with reorder ↑/↓, edit ✎, remove ✕, duplicate/delete program).
-  - Right: computed preview (duration estimate, equipment aggregated across the program, warnings list).
-  - Also a library panel (`renderLibraryPanel`, `renderLibList`, tag/equipment filters, tooltip preview) to browse/add existing exercises into a program's block, and an exercise editor modal (`openExerciseEditor`/`renderExerciseForm`) covering name, category, muscle groups, equipment, description (+ switch-side description for `sided` exercises), duration, image (upload with client-side resize via canvas to a data URL, or manual path), mirror flag.
-  - An "import pending content" flow (`renderImportSummary`, `fetchImportSummary`) that calls `/api/apply-pending` in preview then apply mode and shows a summary of new/skipped/errored items.
-- Saves the whole `{exercises, programs}` (plus presumably `constants`, need to verify) document back via PUT `/api/trainings`; `setDirty`/`dirty` flag gates the Save button.
+- Single-file, inline CSS + JS.
+- Loads `data/trainings.json` plus `GET /api/save-data` (returns the `dev` head SHA).
+  A context bar shows whether saving is possible and whether a build is in progress.
+- Auth: prompts for the edit token on first save, stored in `localStorage['szerkeszto_token']`,
+  sent as `x-edit-token` on POST to `/api/save-data`; cleared on 401.
+- Panels: program list (`renderMid`), program editor (`renderLeft`), computed preview
+  (`renderRight`), exercise library (`renderLibraryPanel`), exercise editor modal
+  (`renderExerciseForm`).
+- Image upload: resized client-side to a webp Blob (jpeg fallback), staged in `pendingImages`,
+  committed as a real file in `images/` on save. No `data:` URLs — the record only ever holds
+  a path.
 
-## Deployment / ops notes (from code comments)
+## Backend
 
-- Hosted on Netlify; GitHub-based deploy (not drag-and-drop) is called out in a comment as the reason `EDIT_TOKEN` is reliably read from env vars now (there's git history of it once being hardcoded, per a comment in `trainings.mjs`).
-- `apply-pending.mjs` comments flag known tech debt: `EDIT_TOKEN` is duplicated as a concept across two functions and should really be unified; there's no automatic archiving of `pending-content/*` files after a successful import.
-- GitHub owner/repo hardcoded in `apply-pending.mjs`: `gergog76/personal-trainer`, branch `main`.
+`netlify/functions/save-data.mjs` — `/api/save-data`.
+- `GET` → `{ branch: "dev", headSha }`, unauthenticated (only a commit SHA).
+- `POST { baseSha, data, images?, message? }` → atomic commit to `dev`, or 409 / 400.
+- Env vars (must be scoped to include Deploy previews): `EDIT_TOKEN` (the editor password),
+  `GITHUB_TOKEN` (fine-grained PAT for `gergog76/personal-trainer`, **Contents: Read and write**).
+- The function never writes to `main`.
 
-## Open questions / things not yet verified
+## Deployment / ops
 
-- Full contents of `_seed-data.mjs`'s `programs` array beyond `core-alap` (file is long; only partially read).
-- Whether `szerkeszto.html`'s save payload includes `constants` or only `exercises`/`programs` (trainings.mjs only validates presence of those two on write).
-- Whether the two dated snapshot HTML files in the repo root are intentionally kept (backups) or stale clutter — worth asking before touching them.
+- Hosted on Netlify, GitHub-connected. `netlify.toml`: build command `node scripts/build-data.mjs`,
+  `functions = "netlify/functions"`, `publish = "."`.
+- Deploy previews for PRs against `main` must be enabled (Netlify default).
+- Migration: `scripts/export-blobs-to-repo.mjs` was the one-time export of the live Blobs
+  document into `data/**`. It and the `@netlify/blobs` dependency can be removed once the
+  cutover is confirmed.
+- `package.json` still has no scripts block; `node` runs the `.mjs` files directly.

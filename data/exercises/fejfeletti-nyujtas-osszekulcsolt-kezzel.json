@@ -1,0 +1,14 @@
+{
+  "name": "Fejfeletti nyújtás összekulcsolt kézzel",
+  "category": "main",
+  "equipment": [],
+  "description": "Nyújtsd a karjaid a fejed fölé, ujjaidat kulcsold össze, tenyered felfelé fordítva. Nyújtózz felfelé, a felsőtested engedd csak nagyon enyhén hátradőlni. Ne erőltesd a hátrahajlást, csak annyira, amennyire kényelmes.",
+  "subtitle": "minimális hátradőlés",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

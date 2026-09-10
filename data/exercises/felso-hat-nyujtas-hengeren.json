@@ -1,0 +1,17 @@
+{
+  "name": "Felső hát nyújtás hengeren",
+  "category": "main",
+  "equipment": [],
+  "description": "Feküdj háton, a sima hengert helyezd keresztben a lapockáid alá, térdeid hajlítva, talpad a talajon. Kezed a tarkódon vagy mellkasodon összekulcsolva. Engedd a felsőtested finoman hátrahajolni a hengeren, nyisd meg a mellkasod. A derekad maradjon nyugodt, ne homorítsd túl.",
+  "subtitle": "sima hengeren, háton fekve",
+  "image": "images/felsohatnyujtashengeren.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"20\" cy=\"46\" r=\"6\"/><path d=\"M26 48 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><path d=\"M50 48 L64 44 L50 40\"/>",
+  "legacy_pose_b": "<circle cx=\"16\" cy=\"38\" r=\"6\"/><path d=\"M22 42 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><path d=\"M50 48 L64 44 L50 40\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "felso-hat",
+    "mellkas"
+  ]
+}

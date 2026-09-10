@@ -1,0 +1,21 @@
+{
+  "name": "Külső forgatás súlyzóval",
+  "category": "main",
+  "equipment": [],
+  "description": "Feküdj a jobb oldaladra, alul lévő karodon támaszd meg a fejed. A bal könyököd hajlítsd 90 fokban, szorítsd a törzsedhez, egy könnyű súlyzót fogj a bal kezedben. Emeld a súlyzót felfelé úgy, hogy a könyököd a helyén marad, majd lassan engedd vissza.",
+  "subtitle": "oldalt fekve",
+  "image": "images/kulsoforgatassulyzoval.webp",
+  "quick_rest_default": false,
+  "mirror": true,
+  "legacy_pose_a": "<path d=\"M14 55 L50 55\"/><circle cx=\"10\" cy=\"50\" r=\"6\"/><path d=\"M40 55 L40 42\"/><path d=\"M40 42 L40 30\"/><circle cx=\"40\" cy=\"27\" r=\"3\"/>",
+  "legacy_pose_b": "<path d=\"M14 55 L50 55\"/><circle cx=\"10\" cy=\"50\" r=\"6\"/><path d=\"M40 55 L40 42\"/><path d=\"M40 42 L52 34\"/><circle cx=\"55\" cy=\"32\" r=\"3\"/>",
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Válts oldalt: feküdj a bal oldaladra. A jobb könyököd hajlítsd 90 fokban, szorítsd a törzsedhez, egy könnyű súlyzót fogj a jobb kezedben. Emeld a súlyzót felfelé úgy, hogy a könyököd a helyén marad, majd lassan engedd vissza.",
+  "muscle_groups": [
+    "vall"
+  ]
+}

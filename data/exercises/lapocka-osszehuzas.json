@@ -1,0 +1,17 @@
+{
+  "name": "Lapocka-összehúzás",
+  "category": "main",
+  "equipment": [],
+  "description": "Állj egyenesen, karod lazán az oldaladon. Húzd össze a lapockáid, mintha egy ceruzát fognál köztük a hátadon, a válladat kicsit hátrahúzva. Tarts 3 másodpercet, engedd el. Ismételd.",
+  "subtitle": "hátulnézet",
+  "image": "images/lapockaosszehuzas.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M24 26 L56 26\"/><path d=\"M24 26 L20 50\"/><path d=\"M56 26 L60 50\"/><path d=\"M32 32 L34 36\"/><path d=\"M48 32 L46 36\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M24 26 L56 26\"/><path d=\"M24 26 L20 50\"/><path d=\"M56 26 L60 50\"/><path d=\"M36 32 L37 36\"/><path d=\"M44 32 L43 36\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "felso-hat",
+    "vall"
+  ]
+}

@@ -1,0 +1,7 @@
+# A tréning-adat és a scriptek sortörése mindig LF, függetlenül attól, kinek
+# mi az autocrlf beállítása. A save-data.mjs helyben számol git blob SHA-t a
+# data/ fájlokból; ha a working tree CRLF-et használna, az nem egyezne a
+# GitHubon tárolt (LF-es) blobbal, és minden mentés "változott" jelzést adna.
+data/** text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf

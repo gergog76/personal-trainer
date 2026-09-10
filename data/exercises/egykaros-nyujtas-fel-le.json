@@ -1,0 +1,19 @@
+{
+  "name": "Egykaros nyújtás fel-le",
+  "category": "main",
+  "equipment": [],
+  "description": "Nyújtsd a bal karod egyenesen felfelé, ameddig kényelmesen tudod, majd engedd lassan lefelé, oldalad mellé. Ismételd a fel-le mozgást kontrolláltan, oldaldőlés nélkül.",
+  "subtitle": "nincs oldaldőlés",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "description_switch": "Válts oldalt: a jobb karoddal ismételd ugyanezt a kontrollált fel-le nyújtást.",
+  "muscle_groups": [
+    "vall"
+  ]
+}

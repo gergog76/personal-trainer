@@ -1,0 +1,19 @@
+{
+  "name": "Galamb gyakorlat",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Ülj a földre, bal lábad hajlítsd magad elé, jobb lábad nyújtsd hátra. Maradj egyenes háttal, ne dőlj előre – kezeddel támaszkodj magad mellett a talajon. Ha bármi kellemetlent érzel a derekadban, hagyd ki.",
+  "image": "images/galamb.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal láb",
+    "right": "jobb láb"
+  },
+  "description_switch": "Válts oldalt: jobb lábad hajlítsd magad elé, bal lábad nyújtsd hátra. Maradj egyenes háttal, ne dőlj előre – kezeddel támaszkodj magad mellett a talajon. Ha bármi kellemetlent érzel a derekadban, hagyd ki.",
+  "muscle_groups": [
+    "csipo"
+  ]
+}

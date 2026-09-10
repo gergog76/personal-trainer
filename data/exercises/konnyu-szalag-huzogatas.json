@@ -1,0 +1,14 @@
+{
+  "name": "Könnyű szalag-húzogatás",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Fogd meg a gumiszalagot mindkét kezeddel, karod magad előtt, vállszélességben. Húzogasd lazán szét és engedd vissza, hogy bemelegítsd a vállöv izmait, nem kell nagy erővel.",
+  "duration_sec": 30,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall",
+    "felso-hat"
+  ]
+}

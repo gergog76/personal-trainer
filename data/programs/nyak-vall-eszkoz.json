@@ -1,0 +1,60 @@
+{
+  "name": "Nyak-váll (eszközzel)",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "vallkorzes-elore"
+      },
+      {
+        "exerciseId": "vallkorzes-hatra",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "konnyu-szalag-huzogatas"
+      },
+      {
+        "exerciseId": "fej-dontes",
+        "sided": true
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "allbehuzas-labdaval"
+      },
+      {
+        "exerciseId": "nyakforgatas-labdanyomassal"
+      },
+      {
+        "exerciseId": "felso-hat-nyujtas-hengeren"
+      },
+      {
+        "exerciseId": "kulso-forgatas-sulyzoval",
+        "sided": true
+      },
+      {
+        "exerciseId": "gumiszalag-szethuzas-gyermekpozban"
+      },
+      {
+        "exerciseId": "gumiszalagos-archuzas-felulrol"
+      },
+      {
+        "exerciseId": "gumiszalagos-y-emeles"
+      },
+      {
+        "exerciseId": "lapocka-osszehuzas-allva"
+      },
+      {
+        "exerciseId": "oldalso-vallemeles-sulyzoval"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "rucskos-henger-nyak-vall-lazitas"
+      },
+      {
+        "exerciseId": "jogategla-alatt-tamasztott-mellkasnyitas"
+      }
+    ]
+  }
+}

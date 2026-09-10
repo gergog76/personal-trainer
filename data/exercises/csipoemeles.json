@@ -1,0 +1,18 @@
+{
+  "name": "Csípőemelés",
+  "category": "main",
+  "equipment": [],
+  "description": "Hanyatt fekve, térdek behajlítva, talpak a talajon csípőszélességben. Emeld fel a csípőd, amíg váll-csípő-térd egy vonalba nem kerül. Szorítsd össze a farizmot fent, majd engedd vissza kontrolláltan.",
+  "subtitle": "glute bridge",
+  "image": "images/csipoemeles.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"14\" cy=\"55\" r=\"6\"/><path d=\"M20 55 L45 55\"/><path d=\"M45 55 L50 62 L50 72\"/><path d=\"M20 57 L8 57\"/>",
+  "legacy_pose_b": "<circle cx=\"14\" cy=\"55\" r=\"6\"/><path d=\"M20 55 L45 45\"/><path d=\"M45 45 L50 60 L50 72\"/><path d=\"M20 57 L8 57\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "farizom",
+    "csipo",
+    "also-hat"
+  ]
+}

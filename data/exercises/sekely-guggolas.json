@@ -1,0 +1,18 @@
+{
+  "name": "Sekély guggolás",
+  "category": "main",
+  "equipment": [],
+  "description": "Láb vállszélességben. Ülj hátra, mintha egy székre ülnél: csípő hátra, térd a lábujjak irányába, hát egyenesen. Csak addig ereszkedj, ameddig kényelmesen tudod tartani a hátad egyenesen és a sarkad a talajon marad.",
+  "subtitle": "csak kényelmes mélységig",
+  "image": "images/sekelyguggolas.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"12\" r=\"6\"/><path d=\"M40 18 L40 42\"/><path d=\"M40 42 L32 58 L32 72\"/><path d=\"M40 42 L48 58 L48 72\"/><path d=\"M40 22 L34 38\"/><path d=\"M40 22 L46 38\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"18\" r=\"6\"/><path d=\"M40 24 L40 46\"/><path d=\"M40 46 L34 56 L34 72\"/><path d=\"M40 46 L46 56 L46 72\"/><path d=\"M40 28 L50 26\"/><path d=\"M40 28 L50 32\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "comb-lab",
+    "farizom",
+    "also-hat"
+  ]
+}

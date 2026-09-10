@@ -1,0 +1,41 @@
+{
+  "name": "Kíméletes derék",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "seta-helyben-karlengetes"
+      },
+      {
+        "exerciseId": "medencebillentes"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "macska-teve-kontrollalt"
+      },
+      {
+        "exerciseId": "bird-dog-v2",
+        "sided": true
+      },
+      {
+        "exerciseId": "mckenzie-kobra-nyujtas"
+      },
+      {
+        "exerciseId": "dead-bug-v2"
+      },
+      {
+        "exerciseId": "csipoemeles-v2"
+      },
+      {
+        "exerciseId": "oldalso-plank-v2",
+        "sided": true
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "ulo-enyhen-hatradontott-nyujtas"
+      }
+    ]
+  }
+}

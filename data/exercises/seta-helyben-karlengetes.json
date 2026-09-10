@@ -1,0 +1,13 @@
+{
+  "name": "Séta helyben / karlengetés",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Járj helyben laza tempóban, karod közben lazán lengesd. Cél a bemelegítés, ne az izzasztás – maradj kényelmes tartományban.",
+  "duration_sec": 75,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "teljes-test"
+  ]
+}

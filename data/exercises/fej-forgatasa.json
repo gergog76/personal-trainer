@@ -1,0 +1,14 @@
+{
+  "name": "Fej forgatása",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Fordítsd a fejed lassan jobbra, majd balra, csak addig, ameddig kényelmes.",
+  "image": "images/fejforgatasa.webp",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "nyak"
+  ]
+}

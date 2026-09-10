@@ -1,0 +1,19 @@
+{
+  "name": "Csípőhajlító nyújtás",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Állva vagy féltérdelésben told enyhén előre a csípőd, amíg érzed a nyúlást a bal csípő elején.",
+  "image": "images/csipohajlitonyujtas.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal láb",
+    "right": "jobb láb"
+  },
+  "description_switch": "Válts oldalt: told enyhén előre a csípőd, amíg érzed a nyúlást a jobb csípő elején.",
+  "muscle_groups": [
+    "csipo"
+  ]
+}

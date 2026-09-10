@@ -1,0 +1,96 @@
+{
+  "name": "Kombinált",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "karkorzes-elore"
+      },
+      {
+        "exerciseId": "karkorzes-hatra",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen"
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-ellentetesen",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "macska-teve-mozgas"
+      },
+      {
+        "exerciseId": "csipohajlito-bemozgatas"
+      },
+      {
+        "exerciseId": "konnyu-helyben-jaras"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "bird-dog"
+      },
+      {
+        "exerciseId": "dead-bug"
+      },
+      {
+        "exerciseId": "csipoemeles"
+      },
+      {
+        "exerciseId": "allbehuzas-labdaval"
+      },
+      {
+        "exerciseId": "nyakforgatas-labdanyomassal"
+      },
+      {
+        "exerciseId": "felso-hat-nyujtas-hengeren"
+      },
+      {
+        "exerciseId": "oldalso-plank",
+        "sided": true
+      },
+      {
+        "exerciseId": "kulso-forgatas-sulyzoval",
+        "sided": true
+      },
+      {
+        "exerciseId": "fekvotamasz"
+      },
+      {
+        "exerciseId": "plank"
+      },
+      {
+        "exerciseId": "hegymaszo"
+      },
+      {
+        "exerciseId": "gumiszalag-szethuzas-gyermekpozban"
+      },
+      {
+        "exerciseId": "gumiszalagos-archuzas-felulrol"
+      },
+      {
+        "exerciseId": "gumiszalagos-y-emeles"
+      },
+      {
+        "exerciseId": "lapocka-osszehuzas-allva"
+      },
+      {
+        "exerciseId": "oldalso-vallemeles-sulyzoval"
+      },
+      {
+        "exerciseId": "sekely-guggolas"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "galamb-gyakorlat",
+        "sided": true
+      },
+      {
+        "exerciseId": "csipohajlito-nyujtas",
+        "sided": true
+      }
+    ]
+  }
+}

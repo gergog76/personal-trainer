@@ -1,0 +1,14 @@
+{
+  "name": "Karkörzés előre",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Állj egyenesen, és körözz mindkét karoddal nagy, kontrollált mozdulatokkal előre. Lazítsd be a vállad.",
+  "image": "images/karkorzeselore.webp",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

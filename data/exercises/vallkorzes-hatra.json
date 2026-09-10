@@ -1,0 +1,14 @@
+{
+  "name": "Vállkörzés hátra",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Körözz mindkét válladdal hátra irányba, nagy, lassú mozdulatokkal.",
+  "image": "images/vallkorzeselore.webp",
+  "duration_sec": 30,
+  "quick_rest_default": true,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

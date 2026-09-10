@@ -1,0 +1,14 @@
+{
+  "name": "Medencebillentés",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Hanyatt fekve, térdek behajlítva, talpak a talajon. Nagyon finoman nyomd a derekad a talajhoz, tarts 2-3 másodpercet, majd engedd el. Kis mozgás, ne erőltesd.",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "has",
+    "also-hat"
+  ]
+}

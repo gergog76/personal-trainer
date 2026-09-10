@@ -1,0 +1,15 @@
+{
+  "name": "Kéztartás hátul összekulcsolva",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Kezeidet hátul összekulcsolva emeld kissé felfelé, nyisd ki a mellkasod. Tartsd lazán, ne erőltesd a vállad.",
+  "image": "images/keztartashatulosszekulcsolva.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "mellkas",
+    "vall"
+  ]
+}

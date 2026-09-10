@@ -1,0 +1,15 @@
+{
+  "name": "Gyerekpóz",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Ülj a sarkadra, karod nyújtsd előre a talajon, homlokod a talaj felé. Csak annyira hajolj előre, amennyire kényelmes – ha az előrehajlás kellemetlen, hagyd ki.",
+  "image": "images/gyerekpoz.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "also-hat",
+    "csipo"
+  ]
+}

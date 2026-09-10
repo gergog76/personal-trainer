@@ -1,0 +1,16 @@
+{
+  "name": "Hátra nyomás (nyak)",
+  "category": "main",
+  "equipment": [],
+  "description": "Tedd a kezed a fejed hátuljára. Nyomd a fejed hátra a kezed ellen úgy, hogy a kezed megtartja – nincs tényleges mozgás, csak feszülés. Tarts 5 másodpercet, engedd el, és ismételd az idő alatt.",
+  "subtitle": "izometrikus",
+  "image": "images/hatranyomasnyak.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"44\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 60\"/><path d=\"M40 26 L52 14 L44 8\"/>",
+  "legacy_pose_b": "<circle cx=\"44\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 60\"/><path d=\"M40 26 L52 14 L44 8\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "nyak"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Nyak és váll",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "vallkorzes-elore"
+      },
+      {
+        "exerciseId": "vallkorzes-hatra",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "fej-oldalra-dontes"
+      },
+      {
+        "exerciseId": "fej-forgatasa"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "hatra-nyomas-nyak"
+      },
+      {
+        "exerciseId": "oldalra-nyomas",
+        "sided": true
+      },
+      {
+        "exerciseId": "forgato-nyomas",
+        "sided": true
+      },
+      {
+        "exerciseId": "lapocka-osszehuzas"
+      },
+      {
+        "exerciseId": "fal-angyal"
+      },
+      {
+        "exerciseId": "kulso-forgatas",
+        "sided": true
+      },
+      {
+        "exerciseId": "gyerekpoz-szalag-szethuzas"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "felso-trapez-nyujtas",
+        "sided": true
+      },
+      {
+        "exerciseId": "vall-nyujtas-modositva",
+        "sided": true
+      },
+      {
+        "exerciseId": "mellizom-nyujtas-ajtofelfaban",
+        "sided": true
+      },
+      {
+        "exerciseId": "keztartas-hatul-osszekulcsolva"
+      }
+    ]
+  }
+}

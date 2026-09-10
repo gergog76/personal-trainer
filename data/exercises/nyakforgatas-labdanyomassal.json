@@ -1,0 +1,16 @@
+{
+  "name": "Nyakforgatás labdanyomással",
+  "category": "main",
+  "equipment": [],
+  "description": "Maradj ugyanabban a helyzetben: háton fekve, a labda a nyakad alatt. Nyomd finoman a labdát a föld felé, és eközben lassan fordítsd a fejed balra, majd jobbra, végig tartva az enyhe nyomást. Kicsi, kontrollált mozgástartományban dolgozz, ne feszítsd túl.",
+  "subtitle": "háton fekve, labda a nyak alatt",
+  "image": "images/nyakforgataslabdanyomassal.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"18\" cy=\"46\" r=\"6\"/><path d=\"M12 46 L6 44\"/><path d=\"M24 48 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><circle cx=\"16\" cy=\"54\" r=\"5\"/>",
+  "legacy_pose_b": "<circle cx=\"18\" cy=\"46\" r=\"6\"/><path d=\"M24 46 L30 44\"/><path d=\"M24 48 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><circle cx=\"16\" cy=\"54\" r=\"5\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "nyak"
+  ]
+}

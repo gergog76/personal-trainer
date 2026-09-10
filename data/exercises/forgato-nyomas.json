@@ -1,0 +1,21 @@
+{
+  "name": "Forgató nyomás",
+  "category": "main",
+  "equipment": [],
+  "description": "Tenyered az arcod bal oldalán. Próbáld elfordítani a fejed balra a kezed ellen, ami megakadályozza a mozgást. Tarts 5 másodpercet, engedd el, ismételd.",
+  "subtitle": "izometrikus",
+  "image": "images/forgatonyomas.webp",
+  "quick_rest_default": false,
+  "mirror": true,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 60\"/><path d=\"M40 24 L30 20 L34 12\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 60\"/><path d=\"M40 24 L30 20 L34 12\"/>",
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Válts oldalt: tenyered az arcod jobb oldalán. Próbáld elfordítani a fejed jobbra a kezed ellen, ami megakadályozza a mozgást. Tarts 5 másodpercet, engedd el, ismételd.",
+  "muscle_groups": [
+    "nyak"
+  ]
+}

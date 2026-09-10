@@ -1,0 +1,14 @@
+{
+  "name": "Rücskös henger nyak-váll lazítás",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Feküdj háton, a rücskös hengert tedd a felső hátad/vállad alá (ne közvetlenül a nyakcsigolyákra). Lassan, apró mozdulatokkal görgesd a felső hátad és a váll környékét. Maradj a kényelmes tartományban.",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "nyak",
+    "vall"
+  ]
+}

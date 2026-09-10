@@ -1,0 +1,16 @@
+{
+  "name": "Oldalsó vállemelés súlyzóval",
+  "category": "main",
+  "equipment": [],
+  "description": "Állj egyenesen, egy-egy könnyű súlyzót fogj a kezedbe, karod lazán az oldaladon. Emeld a karod oldalra vállmagasságig, könyököd enyhén hajlítva, majd lassan engedd vissza. Ne lendülj, kontrolláltan mozogj.",
+  "subtitle": "állva, könnyű súllyal",
+  "image": "images/oldalsovallemelessulyzoval.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M32 22 L48 22\"/><path d=\"M32 22 L28 40\"/><path d=\"M48 22 L52 40\"/><path d=\"M32 24 L20 26\"/><path d=\"M48 24 L60 26\"/><circle cx=\"18\" cy=\"26\" r=\"3\"/><circle cx=\"62\" cy=\"26\" r=\"3\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M32 22 L48 22\"/><path d=\"M32 22 L28 40\"/><path d=\"M48 22 L52 40\"/><path d=\"M32 24 L14 16\"/><path d=\"M48 24 L66 16\"/><circle cx=\"12\" cy=\"15\" r=\"3\"/><circle cx=\"68\" cy=\"15\" r=\"3\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

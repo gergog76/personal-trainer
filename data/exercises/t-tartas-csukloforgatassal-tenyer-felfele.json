@@ -1,0 +1,14 @@
+{
+  "name": "T-tartás csuklóforgatással – tenyér felfelé",
+  "category": "main",
+  "equipment": [],
+  "description": "Emeld a karod oldalra, vállmagasságba, egyenes vonalban a törzsedtől. Fordítsd a tenyered felfelé, érezd a nyúlást a váll elülső részén.",
+  "subtitle": "tenyér felfelé",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

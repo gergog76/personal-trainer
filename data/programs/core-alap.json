@@ -1,0 +1,71 @@
+{
+  "name": "Core alap",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "karkorzes-elore"
+      },
+      {
+        "exerciseId": "karkorzes-hatra",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen"
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-ellentetesen",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "macska-teve-mozgas"
+      },
+      {
+        "exerciseId": "csipohajlito-bemozgatas"
+      },
+      {
+        "exerciseId": "konnyu-helyben-jaras"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "bird-dog"
+      },
+      {
+        "exerciseId": "dead-bug"
+      },
+      {
+        "exerciseId": "csipoemeles"
+      },
+      {
+        "exerciseId": "oldalso-plank",
+        "sided": true
+      },
+      {
+        "exerciseId": "fekvotamasz"
+      },
+      {
+        "exerciseId": "plank"
+      },
+      {
+        "exerciseId": "hegymaszo"
+      },
+      {
+        "exerciseId": "sekely-guggolas"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "gyerekpoz"
+      },
+      {
+        "exerciseId": "galamb-gyakorlat",
+        "sided": true
+      },
+      {
+        "exerciseId": "csipohajlito-nyujtas",
+        "sided": true
+      }
+    ]
+  }
+}

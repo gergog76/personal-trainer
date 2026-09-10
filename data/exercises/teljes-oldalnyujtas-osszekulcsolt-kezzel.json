@@ -1,0 +1,15 @@
+{
+  "name": "Teljes oldalnyújtás összekulcsolt kézzel",
+  "category": "main",
+  "equipment": [],
+  "description": "Emeld mindkét karod a fejed fölé, kulcsold össze a kezeid, tenyered felfelé. Dőlj enyhén oldalra, ameddig kényelmes a nyújtás a törzsed oldalán, majd válts oldalt.",
+  "subtitle": "oldalra dőlve",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "has",
+    "vall"
+  ]
+}

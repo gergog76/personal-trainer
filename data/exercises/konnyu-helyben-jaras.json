@@ -1,0 +1,14 @@
+{
+  "name": "Könnyű helyben járás",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Járj helyben laza, könnyed tempóban, karlengetéssel, hogy felmelegítsd a testet.",
+  "image": "images/konnyuhelybenjaras.webp",
+  "duration_sec": 30,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "teljes-test"
+  ]
+}
