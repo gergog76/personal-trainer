@@ -34,8 +34,13 @@ migrációhoz kell, lokálisan.
 
 ### 2. Base64 képek kiürítése az élő adatból (ha van)
 
+A `@netlify/blobs` már telepítve van a `node_modules`-ban, `npm install` nem kell.
+(Ha mégis kell: PowerShellben `npm.cmd install`, mert a sima `npm` az execution
+policy miatt nem fut. Vagy Git Bashből.)
+
+A tokent NE írd fájlba – add meg a parancs elején környezeti változóként:
+
 ```
-npm install
 NETLIFY_API_TOKEN=<token> node scripts/extract-base64-images.mjs
 # nézd meg a listát, majd:
 NETLIFY_API_TOKEN=<token> node scripts/extract-base64-images.mjs --apply
@@ -102,5 +107,6 @@ functionök eltűnnek. Az élő oldal ekkor áll át.
 ### 9. Takarítás (merge után)
 
 - Blobs store törlése a Netlify UI-ból (opcionális).
-- `npm rm @netlify/blobs`, `scripts/export-blobs-to-repo.mjs`,
-  `scripts/extract-base64-images.mjs` maradéka, ez a `MIGRATION.md`.
+- `npm rm @netlify/blobs`, majd töröld: `scripts/export-blobs-to-repo.mjs`,
+  `scripts/extract-base64-images.mjs`, ez a `MIGRATION.md`.
+  (Ezek csak a migrációhoz kellenek, a `save-data.mjs` nem használ Blobs-ot.)
