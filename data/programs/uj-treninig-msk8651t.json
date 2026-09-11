@@ -18,7 +18,10 @@
         ]
       },
       {
-        "exerciseId": "konnyu-szalag-huzogatas"
+        "exerciseId": "konnyu-szalag-huzogatas",
+        "variants": [
+          "gumiszalagos-y-emeles"
+        ]
       }
     ],
     "cooldown": [
