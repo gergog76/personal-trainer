@@ -690,7 +690,7 @@ window.addEventListener('unhandledrejection', function(e){
 
     if (WARMUP.length){
       WARMUP.forEach((w,i) => {
-        q.push({ kind:'warmup', duration:w.duration, index:i });
+        q.push({ kind:'warmup', duration:(w.duration || WORK_SEC), index:i });
         if (i < WARMUP.length - 1) q.push({ kind:'warmup_rest', duration:restDurationBefore(WARMUP[i+1]), nextIndex:i+1 });
       });
       q.push({ kind:'block_rest', duration:BLOCK_TRANSITION_SEC, nextBlock:'main' });
@@ -707,7 +707,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (COOLDOWN.length){
       q.push({ kind:'block_rest', duration:BLOCK_TRANSITION_SEC, nextBlock:'cooldown' });
       COOLDOWN.forEach((c,i) => {
-        q.push({ kind:'cooldown', duration:c.duration, index:i });
+        q.push({ kind:'cooldown', duration:(c.duration || WORK_SEC), index:i });
         if (i < COOLDOWN.length - 1) q.push({ kind:'cooldown_rest', duration:restDurationBefore(COOLDOWN[i+1]), nextIndex:i+1 });
       });
     }
@@ -1566,7 +1566,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (COOLDOWN.length){
       tail.push({ kind:'block_rest', duration: BLOCK_TRANSITION_SEC, nextBlock:'cooldown' });
       COOLDOWN.forEach((c,i) => {
-        tail.push({ kind:'cooldown', duration:c.duration, index:i });
+        tail.push({ kind:'cooldown', duration:(c.duration || WORK_SEC), index:i });
         if (i < COOLDOWN.length - 1) tail.push({ kind:'cooldown_rest', duration:restDurationBefore(COOLDOWN[i+1]), nextIndex:i+1 });
       });
     }
