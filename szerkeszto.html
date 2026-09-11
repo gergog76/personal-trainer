@@ -263,6 +263,9 @@ const saveCtx = { context: null, loadedCommit: null, headSha: null, baseSha: nul
 // Feltöltött, még nem mentett képek: "images/foo.webp" -> Blob. Mentéskor a
 // bájtok ugyanabba az atomi git commitba kerülnek, mint a JSON.
 const pendingImages = new Map();
+// Előnézetben mutatott helykitöltő kép, amíg egy gyakorlathoz nincs saját kép megadva.
+// Nem kerül bele a mentett rekordba – csak vizuális fallback.
+const DEFAULT_IMG = 'images/default.webp';
 let exEditContext = null;
 let libTagFilterState = new Set();
 let libraryTargetBlock = 'main';  // melyik blokkba kerül a → gombbal hozzáadott gyakorlat
@@ -949,6 +952,16 @@ function renderExerciseForm(){
     clearBtn.textContent = 'Törlés';
     clearBtn.onclick = () => { pendingImages.delete(d.image); d.image = ''; renderExerciseForm(); };
     previewWrap.appendChild(clearBtn);
+    f.appendChild(previewWrap);
+  } else {
+    const previewWrap = el('div'); previewWrap.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:8px;';
+    const previewImg = document.createElement('img');
+    previewImg.src = DEFAULT_IMG;
+    previewImg.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:var(--surface); opacity:.6;';
+    previewWrap.appendChild(previewImg);
+    const info = el('span','', 'Nincs saját kép – az időzítőben egyelőre ez a helykitöltő jelenik meg.');
+    info.style.cssText = 'font-size:11.5px; color:var(--text-dim); flex:1;';
+    previewWrap.appendChild(info);
     f.appendChild(previewWrap);
   }
   const uploadI = document.createElement('input');

@@ -752,6 +752,8 @@ window.addEventListener('unhandledrejection', function(e){
   const btnMute = document.getElementById('btnMute');
   const muteLabel = document.getElementById('muteLabel');
 
+  const DEFAULT_IMG = 'images/default.webp';
+
   const CIRC = 2 * Math.PI * 52;
   ringFg.setAttribute('stroke-dasharray', CIRC.toFixed(1));
 
@@ -899,10 +901,11 @@ window.addEventListener('unhandledrejection', function(e){
         '<g class="fig pose-b">' + ex.poseB + '</g>' +
         closeMirror;
     } else {
-      figBox.style.display = 'none';
+      figBox.style.display = '';
+      cardFig.style.display = 'none';
       cardFig.innerHTML = '';
-      cardImg.style.display = 'none';
-      cardImg.src = '';
+      cardImg.style.display = '';
+      cardImg.src = DEFAULT_IMG;
     }
   }
 
