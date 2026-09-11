@@ -1,0 +1,20 @@
+{
+  "name": "Felső trapéz nyújtás",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Döntsd a fejed jobbra (fül a jobb váll felé), a jobb kezeddel finoman, óvatosan húzd lefelé a fejed egy kicsit. Nyújtást érzel a bal nyak-váll oldalon.",
+  "image": "images/felsotrapeznyujtas.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Válts oldalt: döntsd a fejed balra, a bal kezeddel finoman húzd lefelé a fejed. Nyújtást érzel a jobb nyak-váll oldalon.",
+  "muscle_groups": [
+    "nyak",
+    "vall"
+  ]
+}

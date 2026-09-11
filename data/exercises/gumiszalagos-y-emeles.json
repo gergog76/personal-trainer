@@ -1,0 +1,17 @@
+{
+  "name": "Gumiszalagos Y-emelés",
+  "category": "main",
+  "equipment": [],
+  "description": "Állj a gumiszalag közepére, fogd meg mindkét végét. Nyújtott karral emeld a karod ferdén felfelé, 'Y' alakba, közben a lapockáid enyhén összehúzod. Lassan engedd vissza. Ha fáj a válladban, csökkentsd a mozgástartományt.",
+  "subtitle": "állva",
+  "image": "images/gumiszalagosyemeles.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 55\"/><path d=\"M40 24 L24 40\"/><path d=\"M40 24 L56 40\"/><path d=\"M24 40 L18 66\"/><path d=\"M56 40 L62 66\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 55\"/><path d=\"M40 24 L22 12\"/><path d=\"M40 24 L58 12\"/><path d=\"M22 12 L18 66\"/><path d=\"M58 12 L62 66\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "vall",
+    "felso-hat"
+  ]
+}

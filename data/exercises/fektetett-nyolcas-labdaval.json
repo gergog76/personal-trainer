@@ -1,5 +1,4 @@
 {
-  "id": "fektetett-nyolcas-labdaval",
   "name": "Fektetett nyolcas labdával",
   "category": "main",
   "equipment": [],
@@ -9,5 +8,7 @@
   "quick_rest_default": false,
   "mirror": false,
   "sided": false,
-  "muscle_groups": ["nyak"]
+  "muscle_groups": [
+    "nyak"
+  ]
 }

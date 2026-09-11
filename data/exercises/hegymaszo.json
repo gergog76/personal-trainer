@@ -1,0 +1,17 @@
+{
+  "name": "Hegymászó",
+  "category": "main",
+  "equipment": [],
+  "description": "Fekvőtámasz-pozícióból indulsz. Egyik térdet kontrolláltan húzd a mellkasod felé, majd tedd vissza, és válts lábat. A csípőd maradjon alacsonyan és stabilan, ne biccenjen fel-le.",
+  "subtitle": "csípő stabilan",
+  "image": "images/hegymaszo.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"14\" cy=\"30\" r=\"6\"/><path d=\"M20 32 L62 46\"/><path d=\"M25 34 L25 56\"/><path d=\"M62 46 L75 51\"/>",
+  "legacy_pose_b": "<circle cx=\"14\" cy=\"30\" r=\"6\"/><path d=\"M20 32 L62 46\"/><path d=\"M25 34 L25 56\"/><path d=\"M62 46 L48 50 L42 38\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "has",
+    "csipo"
+  ]
+}

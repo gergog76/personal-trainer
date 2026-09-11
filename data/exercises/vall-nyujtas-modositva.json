@@ -1,0 +1,20 @@
+{
+  "name": "Váll-nyújtás módosítva",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Fejed enyhén oldalra fordítva (nem lehajtva), finom nyújtást érzel a nyakad bal oldalán. Ne erőltesd, csak amíg kényelmes.",
+  "image": "images/vallnyujtasmodositva.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Válts oldalt: fejed enyhén jobbra fordítva, finom nyújtást érzel a nyakad jobb oldalán.",
+  "muscle_groups": [
+    "nyak",
+    "vall"
+  ]
+}

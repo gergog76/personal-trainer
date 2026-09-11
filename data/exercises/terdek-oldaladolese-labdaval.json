@@ -1,5 +1,4 @@
 {
-  "id": "terdek-oldaladolese-labdaval",
   "name": "Térdek oldalra döntése labdával",
   "category": "main",
   "equipment": [],
@@ -9,5 +8,7 @@
   "quick_rest_default": false,
   "mirror": false,
   "sided": false,
-  "muscle_groups": ["also-hat"]
+  "muscle_groups": [
+    "also-hat"
+  ]
 }

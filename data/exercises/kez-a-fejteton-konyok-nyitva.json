@@ -1,0 +1,14 @@
+{
+  "name": "Kéz a fejtetőn, könyök nyitva",
+  "category": "main",
+  "equipment": [],
+  "description": "Tedd mindkét kezed a fejed tetejére, ujjaid összekulcsolva. Nyisd szét a könyöködet oldalra, engedd lazán lógni. Ez más szögből nyitja a vállízületet, mint az első gyakorlat.",
+  "subtitle": "fejtetőn összekulcsolva",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

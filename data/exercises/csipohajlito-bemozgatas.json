@@ -1,0 +1,14 @@
+{
+  "name": "Csípőhajlító bemozgatás",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Állva, lassú, kontrollált lépésekkel emeld egy kicsit magasabbra a térded helyben járás közben, hogy bemozgasd a csípőt.",
+  "image": "images/csipohajlitobemozgatas.webp",
+  "duration_sec": 30,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "csipo"
+  ]
+}

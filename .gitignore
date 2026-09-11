@@ -2,3 +2,6 @@ node_modules/
 .netlify/
 *.log
 .DS_Store
+
+# A data/ kis fájljaiból deploykor generálódik (scripts/build-data.mjs).
+data/trainings.json

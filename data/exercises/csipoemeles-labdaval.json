@@ -1,0 +1,23 @@
+{
+  "name": "Csípőemelés labdával",
+  "category": "main",
+  "equipment": [],
+  "description": "Hanyatt fekve, térdek behajlítva, a felfújható labdát szorítsd a térdeid közé. Talpak a talajon csípőszélességben. Emeld fel a csípőd, amíg váll-csípő-térd egy vonalba nem kerül, közben végig tartsd a nyomást a labdán. Szorítsd össze a farizmot fent, majd engedd vissza kontrolláltan.",
+  "description_switch": "",
+  "subtitle": "",
+  "image": "images/csipoemeleslabdaval.webp",
+  "duration_sec": null,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "farizom",
+    "csipo",
+    "also-hat"
+  ],
+  "source_reference": ""
+}

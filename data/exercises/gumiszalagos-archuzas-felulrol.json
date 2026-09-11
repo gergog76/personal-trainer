@@ -1,0 +1,17 @@
+{
+  "name": "Gumiszalagos archúzás felülről",
+  "category": "main",
+  "equipment": [],
+  "description": "Rögzítsd a gumiszalagot magasan – az ajtókeret tetején, vagy egy régi hintakampón. Állj a rögzítési pont alá, fogd meg a szalagot mindkét kézzel, karod nyújtva felfelé-előre. Húzd le a szalagot úgy, hogy a könyököd oldalra és lefelé nyílik szét az arcod magasságáig, közben összehúzod a lapockáid. Lassan engedd vissza felfelé.",
+  "subtitle": "magas rögzítéssel (pl. régi hintakampó)",
+  "image": "images/gumiszalagosarchuzasfelulrol.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 55\"/><path d=\"M40 22 L28 8\"/><path d=\"M40 22 L52 8\"/><path d=\"M28 8 L28 2\"/><path d=\"M52 8 L52 2\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M40 20 L40 55\"/><path d=\"M40 22 L24 22\"/><path d=\"M40 22 L56 22\"/><path d=\"M24 22 L34 14\"/><path d=\"M56 22 L46 14\"/><path d=\"M34 14 L34 2\"/><path d=\"M46 14 L46 2\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "felso-hat",
+    "vall"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Mellizom-nyújtás ajtófélfában",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Bal karod az ajtófélfán, dőlj enyhén előre a testeddel, amíg érzed a mellkasod nyúlását a bal oldalon.",
+  "image": "images/mellizomnyujtasajtofelfaban.webp",
+  "duration_sec": 45,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Válts oldalt: jobb karod az ajtófélfán, dőlj enyhén előre, amíg érzed a nyúlást a jobb oldalon.",
+  "muscle_groups": [
+    "mellkas"
+  ]
+}

@@ -187,11 +187,11 @@
   <h1>Edzés-szerkesztő</h1>
   <div class="status" id="statusEl">Betöltés…</div>
   <div style="display:flex; gap:8px;">
-    <button class="btn" id="btnImportPending">Hiányzó elemek importálása</button>
     <button class="btn" id="btnReload">Frissítés</button>
     <button class="btn primary" id="btnSave" disabled>Mentés</button>
   </div>
 </header>
+<div id="ctxBar" hidden style="font-size:12px;font-weight:600;text-align:center;padding:5px 8px;"></div>
 
 <div class="tabs">
   <button class="tab-btn active" data-col="trainings">Tréningek</button>
@@ -236,16 +236,6 @@
 <div class="modal-backdrop" id="exModal">
   <div class="modal">
     <h3 id="exModalTitle">Gyakorlat szerkesztése</h3>
-    <div class="modal-backdrop" id="importModal">
-      <div class="modal">
-        <h3>Hiányzó elemek importálása</h3>
-        <div id="importModalBody" style="max-height:50vh; overflow-y:auto; font-size:13.5px;"></div>
-        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
-          <button class="btn" id="importModalCancel">Mégse</button>
-          <button class="btn primary" id="importModalConfirm" style="display:none;">Importálás</button>
-        </div>
-      </div>
-    </div>
     <div id="exForm"></div>
     <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn" id="exCancel">Mégse</button>
@@ -267,6 +257,15 @@ let data = null;
 let selectedProgramId = null;
 let editingProgram = null;   // direkt referencia a data.programs egy elemére
 let dirty = false;
+// A mentés a dev branchre commitol egy Netlify function-ön keresztül. Ezt a
+// szerkesztő a dev -> main PR deploy preview URL-jén futtatva lehet használni.
+const saveCtx = { context: null, loadedCommit: null, headSha: null, baseSha: null };
+// Feltöltött, még nem mentett képek: "images/foo.webp" -> Blob. Mentéskor a
+// bájtok ugyanabba az atomi git commitba kerülnek, mint a JSON.
+const pendingImages = new Map();
+// Előnézetben mutatott helykitöltő kép, amíg egy gyakorlathoz nincs saját kép megadva.
+// Nem kerül bele a mentett rekordba – csak vizuális fallback.
+const DEFAULT_IMG = 'images/default.webp';
 let exEditContext = null;
 let libTagFilterState = new Set();
 let libraryTargetBlock = 'main';  // melyik blokkba kerül a → gombbal hozzáadott gyakorlat
@@ -277,7 +276,9 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 const slugify = (s) => (s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase();
 const escapeHtml = (s) => { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; };
 
-function resizeImageToDataUrl(file, maxWidth, quality){
+// Az átméretezett képet Blob-ként adja vissza (webp, régi Safarin jpeg). NEM
+// data: URL – a bájtok mentéskor valódi fájlként kerülnek a repóba.
+function resizeImageToBlob(file, maxWidth, quality){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Nem sikerült beolvasni a fájlt.'));
@@ -290,21 +291,53 @@ function resizeImageToDataUrl(file, maxWidth, quality){
         const h = Math.max(1, Math.round(img.height * scale));
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        let dataUrl = canvas.toDataURL('image/webp', quality);
-        // Ha a böngésző nem tud webp-et kódolni (pl. régebbi Safari), a
-        // toDataURL csendben png-re esik vissza - ilyenkor jpeg-re váltunk,
-        // mert az sokkal kisebb méretű a nagyjából azonos minőségnél.
-        if (!dataUrl || dataUrl.indexOf('data:image/webp') !== 0){
-          dataUrl = canvas.toDataURL('image/jpeg', quality);
-        }
-        resolve(dataUrl);
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          if (blob && blob.type === 'image/webp'){ resolve(blob); return; }
+          canvas.toBlob((jpg) => jpg ? resolve(jpg) : reject(new Error('Nem sikerült kódolni a képet.')),
+            'image/jpeg', quality);
+        }, 'image/webp', quality);
       };
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
   });
+}
+
+async function blobToBase64(blob){
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+// Az összes kép-útvonal, amit valamelyik gyakorlat épp használ.
+function imagePathsInUse(){
+  const s = new Set();
+  for (const ex of Object.values(data.exercises || {})){
+    if (ex.image) s.add(ex.image);
+    if (ex.image_right) s.add(ex.image_right);
+  }
+  return s;
+}
+
+// Szabad kép-útvonalat választ egy alapnév köré (ütközésnél rövid utótag).
+function freeImagePath(base){
+  const slug = slugify(base) || 'kep';
+  const used = imagePathsInUse();
+  let cand = `images/${slug}.webp`;
+  while (used.has(cand) || pendingImages.has(cand)){
+    cand = `images/${slug}-${Math.random().toString(36).slice(2, 6)}.webp`;
+  }
+  return cand;
+}
+
+// A kiválasztott fájlt átméretezi, felstage-eli, és visszaadja az útvonalát.
+async function stageImage(file, base){
+  const blob = await resizeImageToBlob(file, 800, 0.85);
+  const path = freeImagePath(base);
+  pendingImages.set(path, blob);
+  return path;
 }
 
 function toast(msg, isErr){
@@ -315,19 +348,65 @@ function toast(msg, isErr){
   toast._h = setTimeout(() => t.className = 'toast', 2600);
 }
 
-function setDirty(v){ dirty = v; $('#btnSave').disabled = !v; }
+function setDirty(v){ dirty = v; updateSaveEnabled(); }
+
+const CAN_SAVE_CONTEXTS = ['deploy-preview', 'branch-deploy'];
+function canSave(){ return CAN_SAVE_CONTEXTS.includes(saveCtx.context); }
+function deployRunning(){
+  return canSave() && saveCtx.headSha && saveCtx.loadedCommit && saveCtx.headSha !== saveCtx.loadedCommit;
+}
+
+function renderCtxBar(){
+  const bar = $('#ctxBar');
+  let msg = '', bg = '', fg = '#12201B';
+  if (!canSave()){
+    msg = 'Ez a nézet csak olvasható. Szerkeszteni a dev → main PR deploy preview URL-jén tudsz.';
+    bg = '#D69C5C';
+  } else if (deployRunning()){
+    msg = 'Épp fut egy build az új mentésből – frissíts kb. egy perc múlva, mielőtt tovább szerkesztesz.';
+    bg = '#D69C5C';
+  } else {
+    msg = 'PR preview – a Mentés a dev branchre commitol, a változás a PR-en és ~1 perc múlva a preview-n látszik.';
+    bg = '#2E7D5B'; fg = '#fff';
+  }
+  bar.textContent = msg;
+  bar.style.background = bg;
+  bar.style.color = fg;
+  bar.hidden = false;
+  updateSaveEnabled();
+}
+
+function updateSaveEnabled(){
+  $('#btnSave').disabled = !(dirty && canSave() && !deployRunning());
+}
 
 async function loadData(){
   $('#statusEl').textContent = 'Betöltés…';
   try{
-    const res = await fetch('/api/trainings');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    data = await res.json();
+    const [dataRes, ctxRes] = await Promise.all([
+      fetch('data/trainings.json', { cache: 'no-cache' }),
+      fetch('/api/save-data').catch(() => null),
+    ]);
+    if (!dataRes.ok) throw new Error('HTTP ' + dataRes.status);
+    data = await dataRes.json();
+    const meta = data._meta || {};
+    saveCtx.context = meta.context || 'ismeretlen';
+    saveCtx.loadedCommit = meta.commit || null;
+    if (ctxRes && ctxRes.ok){
+      const c = await ctxRes.json().catch(() => ({}));
+      saveCtx.headSha = c.headSha || null;
+      saveCtx.baseSha = c.headSha || null;
+    } else {
+      saveCtx.headSha = null;
+      saveCtx.baseSha = null;
+    }
+    pendingImages.clear();
     $('#statusEl').textContent = 'Betöltve';
     renderMid();
     renderRight();
     renderLeft();
     renderLibraryPanel();
+    renderCtxBar();
   } catch(err){
     $('#statusEl').textContent = 'Hiba a betöltéskor';
     toast('Nem sikerült betölteni az adatokat: ' + err.message, true);
@@ -335,29 +414,63 @@ async function loadData(){
 }
 
 async function saveData(){
-  let token = localStorage.getItem('szerkeszto_token');
-  if (!token){
-    token = prompt('Add meg a szerkesztő jelszót (egyszer kéri, utána eltárolja ezen a gépen):');
-    if (!token) return;
-    token = token.trim();
-    localStorage.setItem('szerkeszto_token', token);
+  if (!canSave()){
+    toast('Ebben a nézetben nem lehet menteni – nyisd meg a dev → main PR preview URL-jét.', true);
+    return;
   }
+  if (deployRunning()){
+    toast('Előbb frissíts – épp fut egy build az előző mentésből.', true);
+    return;
+  }
+  const token = ensureEditToken();
+  if (!token) return;
+  if (!saveCtx.baseSha){
+    toast('Nincs meg a dev branch feje – kattints a Frissítésre.', true);
+    return;
+  }
+  $('#btnSave').disabled = true;
   try{
-    const res = await fetch('/api/trainings', {
-      method: 'PUT',
+    const used = imagePathsInUse();
+    const images = {};
+    for (const [path, blob] of pendingImages){
+      if (used.has(path)) images[path] = await blobToBase64(blob);
+    }
+    const res = await fetch('/api/save-data', {
+      method: 'POST',
       headers: { 'content-type': 'application/json', 'x-edit-token': token },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ baseSha: saveCtx.baseSha, data, images, message: 'Szerkesztő: adatmentés' }),
     });
+    const out = await res.json().catch(() => ({}));
     if (res.status === 401){
       localStorage.removeItem('szerkeszto_token');
       toast('Hibás jelszó – próbáld újra a Mentéssel.', true);
       return;
     }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (res.status === 409){
+      if (out.headSha) saveCtx.headSha = out.headSha;
+      renderCtxBar();
+      toast('A dev branch közben elmozdult. Kattints a Frissítésre.', true);
+      return;
+    }
+    if (res.status === 400 && Array.isArray(out.errors)){
+      console.warn('Validációs hibák:', out.errors);
+      toast('Az adat nem valid: ' + out.errors[0], true);
+      return;
+    }
+    if (!res.ok) throw new Error(out.error || ('HTTP ' + res.status));
+    saveCtx.baseSha = out.commit;
+    saveCtx.headSha = out.commit;
+    saveCtx.loadedCommit = out.commit;
+    pendingImages.clear();
     setDirty(false);
-    toast('Mentve. Az időzítő appban ~1 percen belül megjelenik.');
+    renderCtxBar();
+    toast(out.changed && out.changed.length
+      ? `Mentve (${out.changed.length + (out.deleted ? out.deleted.length : 0)} fájl). A PR preview ~1 percen belül frissül.`
+      : 'Nem volt változás a mentésre.');
   } catch(err){
     toast('Mentés sikertelen: ' + err.message, true);
+  } finally {
+    updateSaveEnabled();
   }
 }
 
@@ -823,21 +936,32 @@ function renderExerciseForm(){
 
   f.appendChild(el('label','','Kép'));
   if (d.image){
+    const staged = pendingImages.get(d.image);
     const previewWrap = el('div'); previewWrap.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:8px;';
     const previewImg = document.createElement('img');
-    previewImg.src = d.image;
+    previewImg.src = staged ? URL.createObjectURL(staged) : d.image;
     previewImg.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:var(--surface);';
     previewImg.onerror = () => { previewImg.style.display = 'none'; };
     previewWrap.appendChild(previewImg);
-    const info = el('span','', d.image.startsWith('data:')
-      ? ('Feltöltve · ~' + Math.round(d.image.length * 0.75 / 1024) + ' KB')
+    const info = el('span','', staged
+      ? (d.image + ' · feltöltve, mentéskor commitolódik (~' + Math.round(staged.size / 1024) + ' KB)')
       : d.image);
     info.style.cssText = 'font-size:11.5px; color:var(--text-dim); flex:1; word-break:break-all;';
     previewWrap.appendChild(info);
     const clearBtn = document.createElement('button'); clearBtn.type = 'button'; clearBtn.className = 'btn small';
     clearBtn.textContent = 'Törlés';
-    clearBtn.onclick = () => { d.image = ''; renderExerciseForm(); };
+    clearBtn.onclick = () => { pendingImages.delete(d.image); d.image = ''; renderExerciseForm(); };
     previewWrap.appendChild(clearBtn);
+    f.appendChild(previewWrap);
+  } else {
+    const previewWrap = el('div'); previewWrap.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:8px;';
+    const previewImg = document.createElement('img');
+    previewImg.src = DEFAULT_IMG;
+    previewImg.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:var(--surface); opacity:.6;';
+    previewWrap.appendChild(previewImg);
+    const info = el('span','', 'Nincs saját kép – az időzítőben egyelőre ez a helykitöltő jelenik meg.');
+    info.style.cssText = 'font-size:11.5px; color:var(--text-dim); flex:1;';
+    previewWrap.appendChild(info);
     f.appendChild(previewWrap);
   }
   const uploadI = document.createElement('input');
@@ -846,17 +970,20 @@ function renderExerciseForm(){
     const file = uploadI.files[0];
     if (!file) return;
     try{
-      d.image = await resizeImageToDataUrl(file, 800, 0.85);
+      const prev = d.image;
+      d.image = await stageImage(file, d.name || 'gyakorlat');
+      if (prev && pendingImages.has(prev)) pendingImages.delete(prev);
+      setDirty(true);
       renderExerciseForm();
     } catch(err){
       toast('Kép feldolgozása sikertelen: ' + err.message, true);
     }
   };
   f.appendChild(uploadI);
-  const manualI = document.createElement('input'); manualI.type='text'; manualI.value = d.image && !d.image.startsWith('data:') ? d.image : '';
+  const manualI = document.createElement('input'); manualI.type='text'; manualI.value = d.image && !pendingImages.has(d.image) ? d.image : '';
   manualI.placeholder = 'vagy add meg kézzel: images/fajlnev.webp';
   manualI.style.marginTop = '6px';
-  manualI.oninput = () => d.image = manualI.value;
+  manualI.oninput = () => { d.image = manualI.value; };
   f.appendChild(manualI);
 
   const refI = document.createElement('input'); refI.type='text'; refI.value = d.source_reference || '';
@@ -906,10 +1033,8 @@ document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => showTab(b.d
 
 $('#btnNewProgram').onclick = newProgram;
 $('#btnSave').onclick = saveData;
-/* ---------- Hiányzó elemek importálása (pending-content -> Blobs) ---------- */
 
 function getEditToken(){
-  // Ugyanaz a token-forrás, mint a Mentés gombnál - nincs duplikálva.
   return localStorage.getItem('szerkeszto_token');
 }
 
@@ -924,101 +1049,6 @@ function ensureEditToken(){
   return token;
 }
 
-
-function renderImportSummary(summary){
-  const body = $('#importModalBody');
-  const parts = [];
-
-  const newEx = summary.exercises.filter(r => r.status === 'new');
-  const newPr = summary.programs.filter(r => r.status === 'new');
-  const skipped = [...summary.exercises, ...summary.programs].filter(r => r.status === 'skipped');
-  const errors = [...summary.exercises, ...summary.programs].filter(r => r.status === 'error');
-  const otherErrors = summary.errors || [];
-
-  if (newEx.length === 0 && newPr.length === 0){
-    parts.push('<p>Nincs importálandó új elem - a <code>pending-content/</code> mappa üres vagy nem tartalmaz még feldolgozatlan gyakorlatot/programot.</p>');
-    toast('Nincs importálandó új elem.');  
-  } else {
-    if (newEx.length){
-      parts.push(`<p><strong>Új gyakorlatok (${newEx.length}):</strong></p><ul>`);
-      newEx.forEach(r => parts.push(`<li>${escapeHtml(r.name)} <span style="color:var(--text-dim)">(${escapeHtml(r.file)})</span></li>`));
-      parts.push('</ul>');
-    }
-    if (newPr.length){
-      parts.push(`<p><strong>Új programok (${newPr.length}):</strong></p><ul>`);
-      newPr.forEach(r => parts.push(`<li>${escapeHtml(r.name)} <span style="color:var(--text-dim)">(${escapeHtml(r.file)})</span></li>`));
-      parts.push('</ul>');
-    }
-  }
-
-  if (skipped.length){
-    parts.push(`<p><strong>Kihagyva (${skipped.length}):</strong></p><ul class="warn-list">`);
-    skipped.forEach(r => parts.push(`<li>${escapeHtml(r.file)} - ${escapeHtml(r.reason)}</li>`));
-    parts.push('</ul>');
-  }
-
-  if (errors.length || otherErrors.length){
-    parts.push(`<p><strong style="color:var(--warn)">Hibák:</strong></p><ul class="warn-list">`);
-    errors.forEach(r => parts.push(`<li>${escapeHtml(r.file)} - ${escapeHtml(r.reason)}</li>`));
-    otherErrors.forEach(e => parts.push(`<li>${escapeHtml(e.file)} - ${escapeHtml(e.error)}</li>`));
-    parts.push('</ul>');
-  }
-
-  body.innerHTML = parts.join('');
-  $('#importModalConfirm').style.display = (newEx.length || newPr.length) ? 'inline-block' : 'none';
-}
-
-async function fetchImportSummary(mode){
-  const token = ensureEditToken();
-  if (!token) return null;
-  const res = await fetch(`/api/apply-pending?mode=${mode}`, {
-    method: mode === 'apply' ? 'POST' : 'GET',
-    headers: { 'x-edit-token': token }
-  });
-  if (res.status === 401){
-    localStorage.removeItem('szerkeszto_token');
-    toast('Hibás jelszó - próbáld újra.', true);
-    return null;
-  }
-  if (!res.ok){
-    const errBody = await res.json().catch(() => ({}));
-    throw new Error(errBody.error || ('HTTP ' + res.status));
-  }
-  return res.json();
-}
-
-$('#btnImportPending').onclick = async () => {
-  $('#importModalBody').innerHTML = '<p>Betöltés…</p>';
-  $('#importModalConfirm').style.display = 'none';
-  $('#importModal').classList.add('open');
-  try{
-    const summary = await fetchImportSummary('preview');
-    if (summary) renderImportSummary(summary);
-  } catch(err){
-    $('#importModalBody').innerHTML = `<p style="color:var(--warn)">${escapeHtml(err.message)}</p>`;
-  }
-};
-
-$('#importModalCancel').onclick = () => $('#importModal').classList.remove('open');
-
-$('#importModalConfirm').onclick = async () => {
-  $('#importModalConfirm').disabled = true;
-  $('#importModalBody').innerHTML = '<p>Importálás…</p>';
-  try{
-    const result = await fetchImportSummary('apply');
-    if (result){
-      $('#importModalBody').innerHTML = result.applied
-        ? `<p>Sikeres import: ${result.newExerciseCount} gyakorlat, ${result.newProgramCount} program.</p><p>Kattints a Frissítésre a szerkesztő listájának frissítéséhez.</p>`
-        : `<p>${escapeHtml(result.message || 'Nincs importálandó elem.')}</p>`;
-      $('#importModalConfirm').style.display = 'none';
-      toast('Import kész.');
-    }
-  } catch(err){
-    $('#importModalBody').innerHTML = `<p style="color:var(--warn)">${escapeHtml(err.message)}</p>`;
-  } finally {
-    $('#importModalConfirm').disabled = false;
-  }
-};  
 $('#btnReload').onclick = () => {
   if (dirty && !confirm('Nem mentett módosításaid vannak. Elveted őket és újratöltöd a szervertől?')) return;
   selectedProgramId = null; editingProgram = null; setDirty(false);

@@ -1,0 +1,22 @@
+{
+  "name": "Oldalsó plank",
+  "category": "main",
+  "equipment": [],
+  "description": "Oldaladra fekve a bal könyököd pontosan a bal válladat alatt van. Emeld meg a csípőd egyenes vonalba. Ez a fázisban rövidebb ideig tartod, mint máskor – ne erőltesd.",
+  "subtitle": "rövidebb tartás",
+  "duration_sec": 30,
+  "quick_rest_default": false,
+  "mirror": true,
+  "legacy_pose_a": "<path d=\"M20 58 L20 45\"/><path d=\"M20 45 L50 50 L78 58\"/><circle cx=\"16\" cy=\"40\" r=\"6\"/>",
+  "legacy_pose_b": "<path d=\"M20 58 L20 44\"/><path d=\"M20 44 L50 48 L78 56\"/><circle cx=\"16\" cy=\"39\" r=\"6\"/>",
+  "sided": true,
+  "side_labels": {
+    "left": "bal oldal",
+    "right": "jobb oldal"
+  },
+  "description_switch": "Fordulj a másik oldaladra: a jobb könyököd a jobb válladat alatt. Emeld meg a csípőd egyenes vonalba. Rövidebb tartás, ne erőltesd.",
+  "muscle_groups": [
+    "has",
+    "vall"
+  ]
+}

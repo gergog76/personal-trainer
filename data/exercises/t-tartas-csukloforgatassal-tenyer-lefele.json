@@ -1,0 +1,14 @@
+{
+  "name": "T-tartás csuklóforgatással – tenyér lefelé",
+  "category": "main",
+  "equipment": [],
+  "description": "Ugyanabban a T-tartásban fordítsd a tenyered lefelé. Érezd, ahogy a nyúlás a váll másik oldalára helyeződik át.",
+  "subtitle": "tenyér lefelé",
+  "duration_sec": 20,
+  "quick_rest_default": true,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

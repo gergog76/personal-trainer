@@ -1,0 +1,16 @@
+{
+  "name": "Macska-teve (kontrollált)",
+  "category": "main",
+  "equipment": [],
+  "description": "Négykézláb, kezek a váll, térdek a csípő alatt. Nagyon lassan, kis amplitúdóval domborítsd, majd enyhén homorítsd a hátad – csak a fájdalommentes tartományon belül. Ha bármi meghúzódik, csökkentsd tovább a mozgást.",
+  "subtitle": "kis mozgástartomány",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"58\" cy=\"26\" r=\"6\"/><path d=\"M52 30 Q40 38 24 34\"/><path d=\"M52 30 L52 62\"/><path d=\"M24 34 L24 62\"/>",
+  "legacy_pose_b": "<circle cx=\"56\" cy=\"34\" r=\"6\"/><path d=\"M50 34 Q40 24 24 30\"/><path d=\"M50 34 L50 62\"/><path d=\"M24 30 L24 62\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "also-hat",
+    "has"
+  ]
+}

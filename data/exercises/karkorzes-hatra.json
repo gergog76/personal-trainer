@@ -1,0 +1,14 @@
+{
+  "name": "Karkörzés hátra",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Folytasd, most hátrafelé körözz mindkét karoddal nagy, kontrollált mozdulatokkal. Lazítsd be a vállad.",
+  "image": "images/karkorzeshatra.webp",
+  "duration_sec": 20,
+  "quick_rest_default": true,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall"
+  ]
+}

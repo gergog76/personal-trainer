@@ -1,0 +1,18 @@
+{
+  "name": "Fekvőtámasz",
+  "category": "main",
+  "equipment": [],
+  "description": "Tenyerek vállszélességben, test egyenes vonalban fejtől sarokig. Ereszkedj le, amíg a mellkasod majdnem éri a talajt, majd told vissza magad. Figyelj, hogy a csípőd ne süllyedjen be. Nehezebb esetben térdelt fekvőtámasz.",
+  "subtitle": "csípő stabilan",
+  "image": "images/fekvotamasz.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"18\" cy=\"26\" r=\"6\"/><path d=\"M24 30 L60 44\"/><path d=\"M28 32 L28 58\"/><path d=\"M60 44 L76 50\"/>",
+  "legacy_pose_b": "<circle cx=\"20\" cy=\"34\" r=\"6\"/><path d=\"M26 38 L60 46\"/><path d=\"M30 40 L22 52 L28 58\"/><path d=\"M60 46 L76 51\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "mellkas",
+    "vall",
+    "has"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Fej oldalra döntés",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Döntsd a fejed lassan oldalra (a füled a válladhoz közelít), majd vissza, váltott oldalra. Ne hajtsd előre a nyakad.",
+  "image": "images/fejoldalradontes.webp",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "nyak"
+  ]
+}

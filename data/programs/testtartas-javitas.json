@@ -1,0 +1,36 @@
+{
+  "name": "Testtartás-javítás",
+  "rounds": 1,
+  "blocks": {
+    "warmup": [],
+    "main": [
+      {
+        "exerciseId": "fejfeletti-nyujtas-osszekulcsolt-kezzel"
+      },
+      {
+        "exerciseId": "kaktuszkar-vallnyito"
+      },
+      {
+        "exerciseId": "mellkasnyujtas-hatrakulcsolt-kezzel"
+      },
+      {
+        "exerciseId": "t-tartas-csukloforgatassal-tenyer-felfele"
+      },
+      {
+        "exerciseId": "t-tartas-csukloforgatassal-tenyer-lefele",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "kez-a-fejteton-konyok-nyitva"
+      },
+      {
+        "exerciseId": "egykaros-nyujtas-fel-le",
+        "sided": true
+      },
+      {
+        "exerciseId": "teljes-oldalnyujtas-osszekulcsolt-kezzel"
+      }
+    ],
+    "cooldown": []
+  }
+}

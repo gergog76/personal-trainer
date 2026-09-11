@@ -1,0 +1,84 @@
+{
+  "name": "Kombinált, nyak súlyos",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "karkorzes-elore"
+      },
+      {
+        "exerciseId": "karkorzes-hatra",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen"
+      },
+      {
+        "exerciseId": "csipokorzes-oramutato-jarasaval-ellentetesen",
+        "quickRest": true
+      },
+      {
+        "exerciseId": "csipohajlito-bemozgatas"
+      },
+      {
+        "exerciseId": "macska-teve-mozgas"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "bird-dog"
+      },
+      {
+        "exerciseId": "dead-bug"
+      },
+      {
+        "exerciseId": "csipoemeles-labdaval",
+        "variants": [
+          "terdek-oldaladolese-labdaval"
+        ]
+      },
+      {
+        "exerciseId": "allbehuzas-labdaval"
+      },
+      {
+        "exerciseId": "nyakforgatas-labdanyomassal",
+        "variants": [
+          "fektetett-nyolcas-labdaval"
+        ]
+      },
+      {
+        "exerciseId": "felso-hat-nyujtas-hengeren"
+      },
+      {
+        "exerciseId": "oldalso-plank",
+        "sided": true
+      },
+      {
+        "exerciseId": "kulso-forgatas-sulyzoval",
+        "sided": true
+      },
+      {
+        "exerciseId": "fekvotamasz"
+      },
+      {
+        "exerciseId": "plank"
+      },
+      {
+        "exerciseId": "hegymaszo"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "galamb-gyakorlat",
+        "sided": true
+      },
+      {
+        "exerciseId": "csipohajlito-nyujtas",
+        "sided": true
+      },
+      {
+        "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"
+      }
+    ]
+  }
+}

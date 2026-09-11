@@ -1,0 +1,17 @@
+{
+  "name": "Plank",
+  "category": "main",
+  "equipment": [],
+  "description": "Alkarok a talajon, könyök pont a váll alatt. Test egyenes vonal fejtől sarokig, a csípőd se ne süllyedjen, se ne emelkedjen túl magasra. Feszítsd meg a hasad és a farizmod.",
+  "subtitle": "deszka tartás",
+  "image": "images/plank.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"14\" cy=\"30\" r=\"6\"/><path d=\"M20 32 L64 45\"/><path d=\"M25 34 L25 56\"/><path d=\"M64 45 L77 50\"/>",
+  "legacy_pose_b": "<circle cx=\"14\" cy=\"32\" r=\"6\"/><path d=\"M20 34 L64 44\"/><path d=\"M25 36 L25 57\"/><path d=\"M64 44 L77 49\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "has",
+    "vall"
+  ]
+}

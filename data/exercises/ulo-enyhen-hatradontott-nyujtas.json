@@ -1,0 +1,13 @@
+{
+  "name": "Ülő, enyhén hátradöntött nyújtás",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Ülj kényelmesen, kezed magad mögött a talajon, dőlj enyhén hátra – mély előrehajlás helyett ez a nyújtás kíméletesebb a derekadnak. Csak addig dőlj, ameddig kényelmes.",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "also-hat"
+  ]
+}

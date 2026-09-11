@@ -1,0 +1,16 @@
+{
+  "name": "Állbehúzás labdával",
+  "category": "main",
+  "equipment": [],
+  "description": "Feküdj háton, a felfújható labdát tedd a nyakad alá, közvetlenül a fejed és a válladat összekötő ívbe. Húzd be az állad (mintha dupla tokát csinálnál), és nyomd a labdát finoman a föld felé. Tarts néhány másodpercet, majd lazíts: engedd a fejed enyhén hátrabillenni, és pihend ki a nyakad. Apró, kontrollált mozgás legyen, ne erőltesd – ha szédülsz vagy éles fájdalmat érzel, hagyd abba.",
+  "subtitle": "háton fekve, labda a nyak alatt",
+  "image": "images/allbehuzaslabdaval.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"18\" cy=\"46\" r=\"6\"/><path d=\"M24 48 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><circle cx=\"16\" cy=\"54\" r=\"5\"/>",
+  "legacy_pose_b": "<circle cx=\"16\" cy=\"42\" r=\"6\"/><path d=\"M24 46 L58 48\"/><path d=\"M40 52 L36 66\"/><path d=\"M40 52 L48 66\"/><circle cx=\"16\" cy=\"54\" r=\"5\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "nyak"
+  ]
+}

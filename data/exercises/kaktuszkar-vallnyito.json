@@ -1,0 +1,16 @@
+{
+  "name": "Kaktuszkar vállnyitó",
+  "category": "main",
+  "equipment": [],
+  "description": "Emeld a karod fejmagasságig, könyöködet hajlítsd derékszögbe, mintha egy 'W' betű formáját vennéd fel. Húzd hátra enyhén a lapockáid, nyisd meg a mellkasod.",
+  "subtitle": "könyök derékszögben",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "vall",
+    "mellkas",
+    "felso-hat"
+  ]
+}

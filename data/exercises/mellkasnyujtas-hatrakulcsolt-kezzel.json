@@ -1,0 +1,15 @@
+{
+  "name": "Mellkasnyújtás hátrakulcsolt kézzel",
+  "category": "main",
+  "equipment": [],
+  "description": "Kulcsold össze a kezeid a hátad mögött, alul. Nyújtsd le és hátra a karod, közben nyisd meg a mellkasod és húzd hátra a válladat.",
+  "subtitle": "kezek alul összekulcsolva",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "mellkas",
+    "vall"
+  ]
+}

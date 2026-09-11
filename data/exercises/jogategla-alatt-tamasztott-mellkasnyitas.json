@@ -1,0 +1,14 @@
+{
+  "name": "Jógatégla alatt támasztott mellkasnyitás",
+  "category": "cooldown",
+  "equipment": [],
+  "description": "Feküdj háton, a jógatéglát a legalacsonyabb élére állítva helyezd a lapockáid alá, hosszában a gerinced mentén. Karod engedd lazán oldalra vagy fejed fölé nyújtva. Csak annyi ideig maradj így, amíg kényelmes; ha bármi kellemetlent érzel a derekadban vagy a nyakadban, hagyd ki.",
+  "duration_sec": 60,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "mellkas",
+    "felso-hat"
+  ]
+}

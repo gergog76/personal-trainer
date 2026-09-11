@@ -1,0 +1,17 @@
+{
+  "name": "Fal-angyal",
+  "category": "main",
+  "equipment": [],
+  "description": "Háttal a falnak (vagy csak állva, ha nincs fal kéznél), karod indulj 'W' tartásból, csúsztasd fel 'Y' alakba, majd vissza – lassan, kontrolláltan.",
+  "subtitle": "hátulnézet",
+  "image": "images/falangyal.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M24 26 L56 26\"/><path d=\"M24 26 L16 36 L22 22\"/><path d=\"M56 26 L64 36 L58 22\"/>",
+  "legacy_pose_b": "<circle cx=\"40\" cy=\"14\" r=\"6\"/><path d=\"M24 26 L56 26\"/><path d=\"M24 26 L6 6\"/><path d=\"M56 26 L74 6\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "vall",
+    "felso-hat"
+  ]
+}

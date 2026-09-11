@@ -1,0 +1,17 @@
+{
+  "name": "Dead bug",
+  "category": "main",
+  "equipment": [],
+  "description": "Hanyatt fekve, térdek 90 fokban a csípő fölött, karok a mennyezet felé nyúlnak. A derekad nyomd enyhén a talajhoz, és tartsd is ott mozgás közben. Nyújtsd ki lassan az egyik karod hátra és az ellentétes lábad előre, majd hozd vissza, és válts oldalt.",
+  "subtitle": "váltott oldal",
+  "image": "images/deadbug.webp",
+  "quick_rest_default": false,
+  "mirror": false,
+  "legacy_pose_a": "<path d=\"M18 50 L55 50\"/><circle cx=\"14\" cy=\"50\" r=\"6\"/><path d=\"M55 50 L55 30 L70 30\"/><path d=\"M35 50 L35 25\"/>",
+  "legacy_pose_b": "<path d=\"M18 50 L55 50\"/><circle cx=\"14\" cy=\"50\" r=\"6\"/><path d=\"M55 50 L72 58\"/><path d=\"M35 50 L20 30\"/>",
+  "sided": false,
+  "muscle_groups": [
+    "has",
+    "also-hat"
+  ]
+}

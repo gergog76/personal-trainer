@@ -1,0 +1,14 @@
+{
+  "name": "Csípőkörzés – óramutató járásával megegyezően",
+  "category": "warmup",
+  "equipment": [],
+  "description": "Kezed a csípődön, körözz a csípőddel az óramutató járásával megegyező irányba, kis-közepes amplitúdóval, kényelmes tartományban.",
+  "image": "images/csipokorzes.webp",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "muscle_groups": [
+    "csipo"
+  ]
+}
