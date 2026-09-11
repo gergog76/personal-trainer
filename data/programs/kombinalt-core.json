@@ -1,5 +1,5 @@
 {
-  "name": "Kombinált",
+  "name": "Kombinált, nyak súlyos",
   "rounds": 2,
   "blocks": {
     "warmup": [
@@ -32,13 +32,19 @@
         "exerciseId": "dead-bug"
       },
       {
-        "exerciseId": "csipoemeles-labdaval"
+        "exerciseId": "csipoemeles-labdaval",
+        "variants": [
+          "terdek-oldaladolese-labdaval"
+        ]
       },
       {
         "exerciseId": "allbehuzas-labdaval"
       },
       {
-        "exerciseId": "nyakforgatas-labdanyomassal"
+        "exerciseId": "nyakforgatas-labdanyomassal",
+        "variants": [
+          "fektetett-nyolcas-labdaval"
+        ]
       },
       {
         "exerciseId": "felso-hat-nyujtas-hengeren"
@@ -59,18 +65,6 @@
       },
       {
         "exerciseId": "hegymaszo"
-      },
-      {
-        "exerciseId": "gumiszalag-szethuzas-gyermekpozban"
-      },
-      {
-        "exerciseId": "gumiszalagos-y-emeles"
-      },
-      {
-        "exerciseId": "lapocka-osszehuzas-allva"
-      },
-      {
-        "exerciseId": "oldalso-vallemeles-sulyzoval"
       }
     ],
     "cooldown": [

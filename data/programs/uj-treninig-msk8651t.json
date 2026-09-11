@@ -1,0 +1,30 @@
+{
+  "name": "Test",
+  "rounds": 2,
+  "blocks": {
+    "warmup": [
+      {
+        "exerciseId": "karkorzes-elore"
+      },
+      {
+        "exerciseId": "karkorzes-hatra"
+      }
+    ],
+    "main": [
+      {
+        "exerciseId": "kez-a-fejteton-konyok-nyitva",
+        "variants": [
+          "allbehuzas-labdaval"
+        ]
+      },
+      {
+        "exerciseId": "konnyu-szalag-huzogatas"
+      }
+    ],
+    "cooldown": [
+      {
+        "exerciseId": "galamb-gyakorlat"
+      }
+    ]
+  }
+}
