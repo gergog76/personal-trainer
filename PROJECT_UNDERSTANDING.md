@@ -73,11 +73,18 @@ exercises: {
   }, ...
 }
 programs: [
-  { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...] } }
+  { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...], roundRest?: [...] } }
   // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
   // main block items only: variants?: ["exId2", "exId3", ...]
 ]
 ```
+
+- **`roundRest` (optional)**: exercises (e.g. light stretches) shown one after another
+  during the rest between main rounds, instead of a single plain countdown. Same item
+  shape as `warmup`/`cooldown` (no per-round `variants`). If missing/empty, the timer
+  falls back to one countdown phase of `constants.round_rest_sec`. Handled in
+  `index.html` by `buildRoundRestPhases` (phase kinds `round_rest` with an `index`, and
+  `round_rest_rest` for the short gaps between round-rest exercises).
 
 - **Per-round exercise variation (`variants`)**: a `main` block item may carry `variants: [...]`.
   The "variant chain" is `[exerciseId, ...variants]`; round *N* (1-based) uses chain index
