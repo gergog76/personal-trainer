@@ -687,21 +687,42 @@ window.addEventListener('unhandledrejection', function(e){
     return arr[i] || MAIN[i];
   }
 
+  // Egy ROUND_REST elemet ("i") ad vissza a saját munka-fázisával és az utána
+  // következő pihenővel együtt. Az utolsó elemnél ez a pihenő már nem a
+  // következő round-rest elemhez, hanem a következő kör első fő gyakorlatához
+  // vezet át (nextIndex: null) - így a pihenő tényleg pihenő marad, nem folyik
+  // észrevétlenül át a következő aktív szakaszba.
+  function roundRestItemWithGap(i, round){
+    const isLast = i === ROUND_REST.length - 1;
+    const nextItem = isLast ? mainItem(0, round + 1) : ROUND_REST[i+1];
+    return [
+      { kind:'round_rest', duration:(ROUND_REST[i].duration || WORK_SEC), index:i, round },
+      { kind:'round_rest_rest', duration: restDurationBefore(nextItem), nextIndex: isLast ? null : i+1, round }
+    ];
+  }
+
+  // A ROUND_REST hátralévő elemeit adja vissza "fromIndex"-től, egy pihenővel
+  // ELŐTTÜK is (a most véget ért fő gyakorlat/round-rest elem és a következő
+  // között). Ha nincs több elem, csak ez a záró pihenő marad, ami már a
+  // következő kör első fő gyakorlatához vezet át.
+  function remainingRoundRestPhases(fromIndex, round){
+    if (fromIndex >= ROUND_REST.length){
+      return [{ kind:'round_rest_rest', duration: restDurationBefore(mainItem(0, round + 1)), nextIndex:null, round }];
+    }
+    const out = [{ kind:'round_rest_rest', duration: restDurationBefore(ROUND_REST[fromIndex]), nextIndex:fromIndex, round }];
+    for (let i = fromIndex; i < ROUND_REST.length; i++) out.push(...roundRestItemWithGap(i, round));
+    return out;
+  }
+
   // A körök közötti pihenőt adja vissza fázis-tömbként. Ha a programhoz nincs
   // "roundRest" blokk (vagy üres), a régi, egyetlen visszaszámlálásos pihenő
   // marad. Ha van, minden eleme (pl. egy könnyű nyújtás) saját munka-fázist
-  // kap, köztük rövid szünettel - ugyanúgy, ahogy a bemelegítés/levezetés
-  // blokkok is felépülnek.
+  // kap - ugyanúgy, ahogy a bemelegítés/levezetés blokkok is felépülnek -,
+  // egy-egy valódi pihenővel az első elem előtt, az elemek között és az
+  // utolsó után is, hogy a "pihenő" ne folyjon át észrevétlenül munkává.
   function buildRoundRestPhases(round){
     if (!ROUND_REST.length) return [{ kind:'round_rest', duration: ROUND_REST_SEC, round }];
-    const out = [];
-    ROUND_REST.forEach((item, i) => {
-      out.push({ kind:'round_rest', duration:(item.duration || WORK_SEC), index:i, round });
-      if (i < ROUND_REST.length - 1){
-        out.push({ kind:'round_rest_rest', duration: restDurationBefore(ROUND_REST[i+1]), nextIndex:i+1, round });
-      }
-    });
-    return out;
+    return remainingRoundRestPhases(0, round);
   }
 
   function buildQueue(){
@@ -843,7 +864,7 @@ window.addEventListener('unhandledrejection', function(e){
       case 'warmup': case 'warmup_rest': return 'BEMELEGÍTÉS';
       case 'block_rest': return phase.nextBlock === 'main' ? 'A KÖR KÖVETKEZIK' : 'A LEVEZETÉS KÖVETKEZIK';
       case 'main_work': case 'main_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS;
-      case 'round_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS + ' KÉSZ';
+      case 'round_rest': case 'round_rest_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS + ' KÉSZ';
       case 'cooldown': case 'cooldown_rest': return 'LEVEZETÉS';
       case 'done': return 'KÉSZ';
       default: return '';
@@ -859,7 +880,7 @@ window.addEventListener('unhandledrejection', function(e){
       case 'main_work': return mainItem(phase.index, phase.round);
       case 'main_rest': return mainItem(phase.nextIndex, phase.round);
       case 'round_rest': return phase.index != null ? ROUND_REST[phase.index] : mainItem(0, phase.round + 1);
-      case 'round_rest_rest': return ROUND_REST[phase.nextIndex];
+      case 'round_rest_rest': return phase.nextIndex != null ? ROUND_REST[phase.nextIndex] : mainItem(0, phase.round + 1);
       case 'cooldown': return COOLDOWN[phase.index];
       case 'cooldown_rest': return COOLDOWN[phase.nextIndex];
       default: return null;
@@ -891,7 +912,10 @@ window.addEventListener('unhandledrejection', function(e){
           return 'Következő: <b>' + ROUND_REST[phase.index + 1].name + '</b>';
         }
         return 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
-      case 'round_rest_rest': return 'Következő: <b>' + ROUND_REST[phase.nextIndex].name + '</b>';
+      case 'round_rest_rest':
+        return phase.nextIndex != null
+          ? 'Következő: <b>' + ROUND_REST[phase.nextIndex].name + '</b>'
+          : 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
       case 'cooldown':
         return phase.index < COOLDOWN.length - 1
           ? 'Következő: <b>' + COOLDOWN[phase.index+1].name + '</b>'
@@ -1583,16 +1607,13 @@ window.addEventListener('unhandledrejection', function(e){
       }
     } else if (phase.kind === 'round_rest' && phase.index != null){
       // Egy több gyakorlatos körpihenő közepén állunk: a pihenő saját hátralévő
-      // elemei kerülnek először a sorba, csak utána a következő kör.
-      for (let i = phase.index + 1; i < ROUND_REST.length; i++){
-        tail.push({ kind:'round_rest_rest', duration: restDurationBefore(ROUND_REST[i]), nextIndex:i, round });
-        tail.push({ kind:'round_rest', duration:(ROUND_REST[i].duration || WORK_SEC), index:i, round });
-      }
-    } else if (phase.kind === 'round_rest_rest'){
-      for (let i = phase.nextIndex; i < ROUND_REST.length; i++){
-        if (i > phase.nextIndex) tail.push({ kind:'round_rest_rest', duration: restDurationBefore(ROUND_REST[i]), nextIndex:i, round });
-        tail.push({ kind:'round_rest', duration:(ROUND_REST[i].duration || WORK_SEC), index:i, round });
-      }
+      // elemei (a záró pihenővel együtt) kerülnek először a sorba, csak utána
+      // a következő kör.
+      tail.push(...remainingRoundRestPhases(phase.index + 1, round));
+    } else if (phase.kind === 'round_rest_rest' && phase.nextIndex != null){
+      // Már egy pihenőben állunk, ami a "nextIndex" elemhez vezet - az elé
+      // nem kell még egy pihenő, csak maguk a hátralévő elemek.
+      for (let i = phase.nextIndex; i < ROUND_REST.length; i++) tail.push(...roundRestItemWithGap(i, round));
     }
 
     const inRoundRest = phase.kind === 'round_rest' || phase.kind === 'round_rest_rest';
