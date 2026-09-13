@@ -1088,6 +1088,17 @@ window.addEventListener('unhandledrejection', function(e){
 
   const REST_KINDS = ['prep','warmup_rest','main_rest','round_rest','round_rest_rest','cooldown_rest','block_rest'];
 
+  // 'round_rest' kétféle fázist takarhat: a régi, tisztán visszaszámlálós
+  // pihenőt (nincs "index" mezője), VAGY - ha a programhoz van "roundRest"
+  // blokkja - magának a pihenő-gyakorlatnak (pl. egy nyújtásnak) a munka-
+  // fázisát ("index"-szel). Az utóbbinál nem kell bemondani a nevét, hiszen
+  // épp azt végzi az edző - a bemondás a kezdő/köztes/záró pihenőknél
+  // (round_rest_rest) történik, mielőtt elkezdődne.
+  function isAnnouncedRestPhase(phase){
+    if (phase.kind === 'round_rest' && phase.index != null) return false;
+    return REST_KINDS.includes(phase.kind);
+  }
+
   function speakNextExercise(phase){
     if (muted) return;
     if (!('speechSynthesis' in window)) return;
@@ -1113,7 +1124,7 @@ window.addEventListener('unhandledrejection', function(e){
   function speakOnPhaseEnter(){
     const phase = queue[qIndex];
     if (!phase) return;
-    if (spokenThisPhase || !REST_KINDS.includes(phase.kind)) return;
+    if (spokenThisPhase || !isAnnouncedRestPhase(phase)) return;
     spokenThisPhase = true;
     speakNextExercise(phase);
   }
