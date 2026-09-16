@@ -47,9 +47,6 @@
         ]
       },
       {
-        "exerciseId": "felso-hat-nyujtas-hengeren"
-      },
-      {
         "exerciseId": "oldalso-plank",
         "sided": true
       },
@@ -78,6 +75,17 @@
       },
       {
         "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"
+      }
+    ],
+    "roundRest": [
+      {
+        "exerciseId": "talp-hengerezes"
+      },
+      {
+        "exerciseId": "felso-hat-nyujtas-hengeren"
+      },
+      {
+        "exerciseId": "hatso-comb-hengerezes"
       }
     ]
   }

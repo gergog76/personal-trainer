@@ -1,0 +1,23 @@
+{
+  "name": "Talp hengerezés",
+  "category": "main",
+  "equipment": [
+    "Sima henger"
+  ],
+  "description": "A kis hengerrel a talpat masszírozni.",
+  "description_switch": "Válts oldalt",
+  "subtitle": "",
+  "image": "",
+  "duration_sec": 40,
+  "quick_rest_default": false,
+  "mirror": true,
+  "sided": true,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "comb-lab"
+  ],
+  "source_reference": ""
+}

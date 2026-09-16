@@ -252,6 +252,13 @@ const EQUIPMENT = [
   "Sima henger", "Rücskös henger", "Masszázslabda", "Ajtókeret/kilincs"
 ];
 const CATEGORIES = { warmup: "Bemelegítés", main: "Fő rész", cooldown: "Levezetés" };
+// A program-blokkok címkéi. A "roundRest" nem gyakorlat-kategória (egy
+// gyakorlat category mezője csak warmup/main/cooldown lehet) - ez egy
+// negyedik, opcionális blokk egy programon belül: a fő körök közötti pihenőt
+// tölti ki gyakorlatokkal (pl. könnyű nyújtással) a puszta visszaszámlálás
+// helyett/mellett.
+const BLOCK_LABELS = Object.assign({ roundRest: "Pihenő a körök között" }, CATEGORIES);
+const PROGRAM_BLOCK_KEYS = ['warmup', 'main', 'cooldown', 'roundRest'];
 
 let data = null;
 let selectedProgramId = null;
@@ -478,7 +485,7 @@ async function saveData(){
 
 function programStats(p){
   let count = 0;
-  ['warmup','main','cooldown'].forEach(k => (p.blocks[k]||[]).forEach(() => count++));
+  PROGRAM_BLOCK_KEYS.forEach(k => (p.blocks[k]||[]).forEach(() => count++));
   return count;
 }
 
@@ -515,7 +522,7 @@ function renderRight(){
   c.appendChild(el('div','detail-stat', `<span>Körök</span><span>${p.rounds}</span>`));
   let totalSec = 0, warnings = [];
   const equipmentSet = new Set();
-  ['warmup','main','cooldown'].forEach(k => {
+  PROGRAM_BLOCK_KEYS.forEach(k => {
     (p.blocks[k]||[]).forEach(item => {
       const ex = data.exercises[item.exerciseId];
       if (!ex){ warnings.push(`Hiányzó gyakorlat-hivatkozás: ${item.exerciseId}`); return; }
@@ -533,7 +540,7 @@ function renderRight(){
         });
       }
     });
-    c.appendChild(el('div','detail-stat', `<span>${CATEGORIES[k]}</span><span>${(p.blocks[k]||[]).length} gyakorlat</span>`));
+    c.appendChild(el('div','detail-stat', `<span>${BLOCK_LABELS[k]}</span><span>${(p.blocks[k]||[]).length} gyakorlat</span>`));
   });
   c.appendChild(el('div','detail-stat', `<span>Becsült idő (kör nélkül)</span><span>~${Math.round(totalSec/60)} perc</span>`));
   c.appendChild(el('div','detail-stat', `<span>Szükséges eszközök</span><span>${equipmentSet.size ? [...equipmentSet].join(', ') : 'nincs'}</span>`));
@@ -571,10 +578,10 @@ function renderLeft(){
   idRow.appendChild(idWrap); idRow.appendChild(roundsWrap);
   c.appendChild(idRow);
 
-  ['warmup','main','cooldown'].forEach(blockKey => {
+  PROGRAM_BLOCK_KEYS.forEach(blockKey => {
     const section = el('div','block-section');
     const title = el('div','block-title');
-    title.appendChild(el('span','',CATEGORIES[blockKey]));
+    title.appendChild(el('span','',BLOCK_LABELS[blockKey]));
     const addBtn = el('button','btn small','+ gyakorlat');
     addBtn.onclick = () => { variantTarget = null; libraryTargetBlock = blockKey; renderLibraryPanel(); showTab('library'); };
     title.appendChild(addBtn);
@@ -689,11 +696,11 @@ function newProgram(){
 function addExerciseToTargetBlock(exerciseId){
   if (!editingProgram){ toast('Előbb válassz (vagy hozz létre) egy tréninget a bal oldali listából.', true); return; }
   if (variantTarget){ addVariantToTarget(exerciseId); return; }
-  editingProgram.blocks[libraryTargetBlock].push({ exerciseId });
+  (editingProgram.blocks[libraryTargetBlock] || (editingProgram.blocks[libraryTargetBlock] = [])).push({ exerciseId });
   setDirty(true);
   renderLeft();
   renderMid();
-  toast('Hozzáadva: ' + CATEGORIES[libraryTargetBlock] + '.');
+  toast('Hozzáadva: ' + BLOCK_LABELS[libraryTargetBlock] + '.');
 }
 
 // A könyvtárból választott gyakorlatot kör-variánsként fűzi a kijelölt fő-blokk
@@ -800,7 +807,7 @@ function renderLibList(){
       info.appendChild(el('div','li-tags', (ex.muscle_groups||[]).map(t => (data.muscle_group_taxonomy||{})[t]||t).join(', ') || '—'));
       row.appendChild(info);
       const addBtn = el('button','btn small primary', variantTarget ? '🔁 variáns' : '→');
-      addBtn.title = variantTarget ? 'Hozzáadás kör-variánsként' : ('Hozzáadás: ' + CATEGORIES[libraryTargetBlock]);
+      addBtn.title = variantTarget ? 'Hozzáadás kör-variánsként' : ('Hozzáadás: ' + BLOCK_LABELS[libraryTargetBlock]);
       addBtn.onclick = (e) => { e.stopPropagation(); addExerciseToTargetBlock(id); };
       row.appendChild(addBtn);
       attachTooltip(row, ex);
@@ -835,8 +842,8 @@ function renderLibTargetSelector(){
     return;
   }
   wrap.appendChild(el('span','','Új gyakorlat ide kerül:'));
-  ['warmup','main','cooldown'].forEach(k => {
-    const t = el('div','tag' + (libraryTargetBlock === k ? ' on' : ''), CATEGORIES[k]);
+  PROGRAM_BLOCK_KEYS.forEach(k => {
+    const t = el('div','tag' + (libraryTargetBlock === k ? ' on' : ''), BLOCK_LABELS[k]);
     t.onclick = () => { libraryTargetBlock = k; renderLibTargetSelector(); renderLibList(); };
     wrap.appendChild(t);
   });

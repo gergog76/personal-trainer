@@ -195,7 +195,7 @@
   .ring-phase.warmup, .ring-phase.warmup_rest{ color:var(--warmup); }
   .ring-phase.block_rest{ color:var(--rest); }
   .ring-phase.main_work{ color:var(--work); }
-  .ring-phase.main_rest, .ring-phase.round_rest{ color:var(--rest); }
+  .ring-phase.main_rest, .ring-phase.round_rest, .ring-phase.round_rest_rest{ color:var(--rest); }
   .ring-phase.cooldown, .ring-phase.cooldown_rest{ color:var(--cooldown); }
   .ring-phase.done{ color:var(--done); }
 
@@ -517,7 +517,7 @@ window.addEventListener('unhandledrejection', function(e){
   let WORKOUT_ORDER = [];
   let roundsByWorkout = {};
   let currentWorkoutId = 'core-alap';
-  let WARMUP = [], MAIN = [], COOLDOWN = [];
+  let WARMUP = [], MAIN = [], COOLDOWN = [], ROUND_REST = [];
   // A fő blokk körönként váltakozó gyakorlatait feloldó függvény
   // (workout-váltáskor és adatbetöltéskor frissül). Lásd makeMainResolver.
   let mainForRound = null;
@@ -620,7 +620,8 @@ window.addEventListener('unhandledrejection', function(e){
         warmup: expandBlock(blocks.warmup, exercisesById),
         main: expandBlock(blocks.main, exercisesById),
         mainForRound: makeMainResolver(blocks.main, exercisesById),
-        cooldown: expandBlock(blocks.cooldown, exercisesById)
+        cooldown: expandBlock(blocks.cooldown, exercisesById),
+        roundRest: expandBlock(blocks.roundRest, exercisesById)
       };
       WORKOUT_ORDER.push({ id: p.id, name: p.name });
       roundsByWorkout[p.id] = p.rounds;
@@ -640,6 +641,7 @@ window.addEventListener('unhandledrejection', function(e){
     MAIN = WORKOUTS[currentWorkoutId].main;
     mainForRound = WORKOUTS[currentWorkoutId].mainForRound;
     COOLDOWN = WORKOUTS[currentWorkoutId].cooldown;
+    ROUND_REST = WORKOUTS[currentWorkoutId].roundRest;
     ROUNDS = roundsByWorkout[currentWorkoutId];
   }
 
@@ -685,6 +687,44 @@ window.addEventListener('unhandledrejection', function(e){
     return arr[i] || MAIN[i];
   }
 
+  // Egy ROUND_REST elemet ("i") ad vissza a saját munka-fázisával és az utána
+  // következő pihenővel együtt. Az utolsó elemnél ez a pihenő már nem a
+  // következő round-rest elemhez, hanem a következő kör első fő gyakorlatához
+  // vezet át (nextIndex: null) - így a pihenő tényleg pihenő marad, nem folyik
+  // észrevétlenül át a következő aktív szakaszba.
+  function roundRestItemWithGap(i, round){
+    const isLast = i === ROUND_REST.length - 1;
+    const nextItem = isLast ? mainItem(0, round + 1) : ROUND_REST[i+1];
+    return [
+      { kind:'round_rest', duration:(ROUND_REST[i].duration || WORK_SEC), index:i, round },
+      { kind:'round_rest_rest', duration: restDurationBefore(nextItem), nextIndex: isLast ? null : i+1, round }
+    ];
+  }
+
+  // A ROUND_REST hátralévő elemeit adja vissza "fromIndex"-től, egy pihenővel
+  // ELŐTTÜK is (a most véget ért fő gyakorlat/round-rest elem és a következő
+  // között). Ha nincs több elem, csak ez a záró pihenő marad, ami már a
+  // következő kör első fő gyakorlatához vezet át.
+  function remainingRoundRestPhases(fromIndex, round){
+    if (fromIndex >= ROUND_REST.length){
+      return [{ kind:'round_rest_rest', duration: restDurationBefore(mainItem(0, round + 1)), nextIndex:null, round }];
+    }
+    const out = [{ kind:'round_rest_rest', duration: restDurationBefore(ROUND_REST[fromIndex]), nextIndex:fromIndex, round }];
+    for (let i = fromIndex; i < ROUND_REST.length; i++) out.push(...roundRestItemWithGap(i, round));
+    return out;
+  }
+
+  // A körök közötti pihenőt adja vissza fázis-tömbként. Ha a programhoz nincs
+  // "roundRest" blokk (vagy üres), a régi, egyetlen visszaszámlálásos pihenő
+  // marad. Ha van, minden eleme (pl. egy könnyű nyújtás) saját munka-fázist
+  // kap - ugyanúgy, ahogy a bemelegítés/levezetés blokkok is felépülnek -,
+  // egy-egy valódi pihenővel az első elem előtt, az elemek között és az
+  // utolsó után is, hogy a "pihenő" ne folyjon át észrevétlenül munkává.
+  function buildRoundRestPhases(round){
+    if (!ROUND_REST.length) return [{ kind:'round_rest', duration: ROUND_REST_SEC, round }];
+    return remainingRoundRestPhases(0, round);
+  }
+
   function buildQueue(){
     const q = [{ kind:'prep', duration: PREP_SEC }];
 
@@ -701,7 +741,7 @@ window.addEventListener('unhandledrejection', function(e){
         q.push({ kind:'main_work', duration: (mainItem(i, r).duration || WORK_SEC), index:i, round:r });
         if (i < MAIN.length - 1) q.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i+1, r)), nextIndex:i+1, round:r });
       }
-      if (r < ROUNDS) q.push({ kind:'round_rest', duration: ROUND_REST_SEC, round:r });
+      if (r < ROUNDS) q.push(...buildRoundRestPhases(r));
     }
 
     if (COOLDOWN.length){
@@ -794,7 +834,7 @@ window.addEventListener('unhandledrejection', function(e){
   function phaseColor(kind){
     switch(kind){
       case 'main_work': return cssVar('--work');
-      case 'main_rest': case 'round_rest': case 'block_rest': return cssVar('--rest');
+      case 'main_rest': case 'round_rest': case 'round_rest_rest': case 'block_rest': return cssVar('--rest');
       case 'warmup': case 'warmup_rest': return cssVar('--warmup');
       case 'cooldown': case 'cooldown_rest': return cssVar('--cooldown');
       case 'prep': return cssVar('--prep');
@@ -810,7 +850,7 @@ window.addEventListener('unhandledrejection', function(e){
       case 'warmup_rest': return 'PIHENÉS';
       case 'block_rest': return 'KÉSZÜLJ';
       case 'main_work': return 'MUNKA';
-      case 'main_rest': case 'round_rest': return 'PIHENÉS';
+      case 'main_rest': case 'round_rest': case 'round_rest_rest': return 'PIHENÉS';
       case 'cooldown': return 'LEVEZETÉS';
       case 'cooldown_rest': return 'PIHENÉS';
       case 'done': return 'KÉSZ';
@@ -824,7 +864,7 @@ window.addEventListener('unhandledrejection', function(e){
       case 'warmup': case 'warmup_rest': return 'BEMELEGÍTÉS';
       case 'block_rest': return phase.nextBlock === 'main' ? 'A KÖR KÖVETKEZIK' : 'A LEVEZETÉS KÖVETKEZIK';
       case 'main_work': case 'main_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS;
-      case 'round_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS + ' KÉSZ';
+      case 'round_rest': case 'round_rest_rest': return 'KÖR ' + phase.round + ' / ' + ROUNDS + ' KÉSZ';
       case 'cooldown': case 'cooldown_rest': return 'LEVEZETÉS';
       case 'done': return 'KÉSZ';
       default: return '';
@@ -839,7 +879,8 @@ window.addEventListener('unhandledrejection', function(e){
       case 'block_rest': return phase.nextBlock === 'main' ? mainItem(0, 1) : COOLDOWN[0];
       case 'main_work': return mainItem(phase.index, phase.round);
       case 'main_rest': return mainItem(phase.nextIndex, phase.round);
-      case 'round_rest': return mainItem(0, phase.round + 1);
+      case 'round_rest': return phase.index != null ? ROUND_REST[phase.index] : mainItem(0, phase.round + 1);
+      case 'round_rest_rest': return phase.nextIndex != null ? ROUND_REST[phase.nextIndex] : mainItem(0, phase.round + 1);
       case 'cooldown': return COOLDOWN[phase.index];
       case 'cooldown_rest': return COOLDOWN[phase.nextIndex];
       default: return null;
@@ -866,7 +907,15 @@ window.addEventListener('unhandledrejection', function(e){
         return 'A levezetés következik';
       }
       case 'main_rest': return 'Következő: <b>' + mainItem(phase.nextIndex, phase.round).name + '</b>';
-      case 'round_rest': return 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
+      case 'round_rest':
+        if (phase.index != null && phase.index < ROUND_REST.length - 1){
+          return 'Következő: <b>' + ROUND_REST[phase.index + 1].name + '</b>';
+        }
+        return 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
+      case 'round_rest_rest':
+        return phase.nextIndex != null
+          ? 'Következő: <b>' + ROUND_REST[phase.nextIndex].name + '</b>'
+          : 'Következő kör: <b>' + mainItem(0, phase.round + 1).name + '</b>';
       case 'cooldown':
         return phase.index < COOLDOWN.length - 1
           ? 'Következő: <b>' + COOLDOWN[phase.index+1].name + '</b>'
@@ -924,7 +973,7 @@ window.addEventListener('unhandledrejection', function(e){
     roundLabel.textContent = topLabel(phase);
     nextHint.innerHTML = getNextHint(phase);
 
-    dotsEl.style.display = (phase.kind === 'main_work' || phase.kind === 'main_rest' || phase.kind === 'round_rest') ? 'flex' : 'none';
+    dotsEl.style.display = (phase.kind === 'main_work' || phase.kind === 'main_rest' || phase.kind === 'round_rest' || phase.kind === 'round_rest_rest') ? 'flex' : 'none';
     if (dotsEl.style.display === 'flex'){
       Array.from(dotsEl.children).forEach((d, i) => {
         d.classList.remove('done','active');
@@ -933,7 +982,7 @@ window.addEventListener('unhandledrejection', function(e){
           else if (i === phase.index) d.classList.add('active');
         } else if (phase.kind === 'main_rest'){
           if (i < phase.nextIndex) d.classList.add('done');
-        } else if (phase.kind === 'round_rest'){
+        } else if (phase.kind === 'round_rest' || phase.kind === 'round_rest_rest'){
           d.classList.add('done');
         }
       });
@@ -1037,7 +1086,18 @@ window.addEventListener('unhandledrejection', function(e){
     }
   }
 
-  const REST_KINDS = ['prep','warmup_rest','main_rest','round_rest','cooldown_rest','block_rest'];
+  const REST_KINDS = ['prep','warmup_rest','main_rest','round_rest','round_rest_rest','cooldown_rest','block_rest'];
+
+  // 'round_rest' kétféle fázist takarhat: a régi, tisztán visszaszámlálós
+  // pihenőt (nincs "index" mezője), VAGY - ha a programhoz van "roundRest"
+  // blokkja - magának a pihenő-gyakorlatnak (pl. egy nyújtásnak) a munka-
+  // fázisát ("index"-szel). Az utóbbinál nem kell bemondani a nevét, hiszen
+  // épp azt végzi az edző - a bemondás a kezdő/köztes/záró pihenőknél
+  // (round_rest_rest) történik, mielőtt elkezdődne.
+  function isAnnouncedRestPhase(phase){
+    if (phase.kind === 'round_rest' && phase.index != null) return false;
+    return REST_KINDS.includes(phase.kind);
+  }
 
   function speakNextExercise(phase){
     if (muted) return;
@@ -1064,7 +1124,7 @@ window.addEventListener('unhandledrejection', function(e){
   function speakOnPhaseEnter(){
     const phase = queue[qIndex];
     if (!phase) return;
-    if (spokenThisPhase || !REST_KINDS.includes(phase.kind)) return;
+    if (spokenThisPhase || !isAnnouncedRestPhase(phase)) return;
     spokenThisPhase = true;
     speakNextExercise(phase);
   }
@@ -1392,7 +1452,15 @@ window.addEventListener('unhandledrejection', function(e){
           pushRow('Pihenő', phase.duration, true);
           break;
         case 'round_rest':
-          pushRow('Pihenő a körök között', phase.duration, true);
+          if (phase.index != null){
+            if (!current || current.title !== 'Pihenő a körök között') startSection('Pihenő a körök között');
+            pushRow(ROUND_REST[phase.index].name, phase.duration, false);
+          } else {
+            pushRow('Pihenő a körök között', phase.duration, true);
+          }
+          break;
+        case 'round_rest_rest':
+          pushRow('Pihenő', phase.duration, true);
           break;
         case 'cooldown':
           if (!current || current.title !== 'Levezetés') startSection('Levezetés');
@@ -1481,6 +1549,7 @@ window.addEventListener('unhandledrejection', function(e){
     MAIN = w.main;
     mainForRound = w.mainForRound;
     COOLDOWN = w.cooldown;
+    ROUND_REST = w.roundRest;
     ROUNDS = roundsByWorkout[id];
     appTitle.textContent = w.name;
 
@@ -1518,7 +1587,7 @@ window.addEventListener('unhandledrejection', function(e){
   // reflect a new ROUNDS value without disturbing anything already done.
   function rebuildQueueForNewRounds(){
     const phase = queue[qIndex];
-    const mainKinds = ['main_work','main_rest','round_rest'];
+    const mainKinds = ['main_work','main_rest','round_rest','round_rest_rest'];
 
     if (!mainKinds.includes(phase.kind)){
       // Not currently inside the main block. If the main block hasn't
@@ -1547,14 +1616,24 @@ window.addEventListener('unhandledrejection', function(e){
         if (i > phase.nextIndex) tail.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i, round)), nextIndex:i, round });
         tail.push({ kind:'main_work', duration:(mainItem(i, round).duration || WORK_SEC), index:i, round });
       }
+    } else if (phase.kind === 'round_rest' && phase.index != null){
+      // Egy több gyakorlatos körpihenő közepén állunk: a pihenő saját hátralévő
+      // elemei (a záró pihenővel együtt) kerülnek először a sorba, csak utána
+      // a következő kör.
+      tail.push(...remainingRoundRestPhases(phase.index + 1, round));
+    } else if (phase.kind === 'round_rest_rest' && phase.nextIndex != null){
+      // Már egy pihenőben állunk, ami a "nextIndex" elemhez vezet - az elé
+      // nem kell még egy pihenő, csak maguk a hátralévő elemek.
+      for (let i = phase.nextIndex; i < ROUND_REST.length; i++) tail.push(...roundRestItemWithGap(i, round));
     }
 
-    const startNextRound = phase.kind === 'round_rest' ? phase.round + 1 : round + 1;
+    const inRoundRest = phase.kind === 'round_rest' || phase.kind === 'round_rest_rest';
+    const startNextRound = inRoundRest ? phase.round + 1 : round + 1;
 
     if (startNextRound <= ROUNDS){
       for (let r = startNextRound; r <= ROUNDS; r++){
-        if (!(phase.kind === 'round_rest' && r === startNextRound)){
-          tail.push({ kind:'round_rest', duration: ROUND_REST_SEC, round: r - 1 });
+        if (!(inRoundRest && r === startNextRound)){
+          tail.push(...buildRoundRestPhases(r - 1));
         }
         for (let i = 0; i < MAIN.length; i++){
           if (i > 0) tail.push({ kind:'main_rest', duration: restDurationBefore(mainItem(i, r)), nextIndex:i, round:r });

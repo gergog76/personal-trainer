@@ -1,0 +1,23 @@
+{
+  "name": "Hátsó comb hengerezés",
+  "category": "main",
+  "equipment": [
+    "Sima henger"
+  ],
+  "description": "A comb alsó részét hengerezni.",
+  "description_switch": "",
+  "subtitle": "",
+  "image": "",
+  "duration_sec": 40,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "comb-lab"
+  ],
+  "source_reference": ""
+}
