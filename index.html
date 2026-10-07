@@ -1149,6 +1149,7 @@ window.addEventListener('unhandledrejection', function(e){
     utter.lang = (voice && voice.lang) || 'hu-HU';
     utter.rate = 1;
     utter.pitch = 1;
+    utter.volume = 1;
     let started = false;
     utter.onstart = () => { started = true; dbg('start: ' + ex.name); };
     utter.onend = () => dbg('end: ' + ex.name);
@@ -1193,6 +1194,14 @@ window.addEventListener('unhandledrejection', function(e){
   let wakeLock = null;
   const keepAwakeVideo = document.getElementById('keepAwakeVideo');
   const keepAliveAudio = document.getElementById('keepAliveAudio');
+
+  if (DEBUG){
+    [['audio', keepAliveAudio], ['video', keepAwakeVideo]].forEach(([n, m]) => {
+      if (!m) return;
+      m.addEventListener('play', () => dbg(n + ' play'));
+      m.addEventListener('pause', () => dbg(n + ' PAUSE'));
+    });
+  }
 
   function startKeepAwakeMedia(){
     // A play() a specifikáció szerint mindig Promise-t ad vissza, de néhány
@@ -1244,6 +1253,11 @@ window.addEventListener('unhandledrejection', function(e){
     if (!running) return;
     const now = Date.now();
     if (now - lastKeepAwakeCheck < 5000) return;
+    // Bemondás közben nem nyúlunk a médiaelemekhez: ha az iOS a beszéd
+    // miatt szüneteltette a néma háttérhangot, az újraindítás (play())
+    // visszavehetné az audio-munkamenetet, és elhalkítaná/megszakítaná a
+    // bemondást. A következő tick újra próbálja.
+    if ('speechSynthesis' in window && window.speechSynthesis.speaking) return;
     lastKeepAwakeCheck = now;
     ensureAudio();
     requestWakeLock();
