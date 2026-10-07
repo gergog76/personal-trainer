@@ -1152,12 +1152,18 @@ window.addEventListener('unhandledrejection', function(e){
     utter.volume = 1;
     let started = false;
     utter.onstart = () => { started = true; dbg('start: ' + ex.name); };
-    utter.onend = () => dbg('end: ' + ex.name);
-    utter.onerror = (e) => dbg('HIBA: ' + (e && e.error) + ' (' + ex.name + ')');
+    utter.onend = () => { dbg('end: ' + ex.name); resumeMediaAfterSpeech(); };
+    utter.onerror = (e) => { dbg('HIBA: ' + (e && e.error) + ' (' + ex.name + ')'); resumeMediaAfterSpeech(); };
     dbg('speak "' + ex.name + '" hang=' + (voice ? voice.name + ' ' + voice.lang + (huVoice ? '' : ' (nem magyar!)') : 'NINCS')
-      + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-'));
+      + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-')
+      + ' audioSession=' + ((navigator.audioSession && navigator.audioSession.type) || 'nincs'));
+    // iOS 27-en a bemondás indulása után ~1 mp-cel az iOS maga szünetelteti a
+    // néma háttérhangot/videót, és ez menet közben elhalkítja a beszédet. Ezért
+    // még a bemondás ELŐTT mi állítjuk le őket, hogy a hangmunkamenet ne
+    // beszéd közben váltson; a végén (onend/onerror) újraindítjuk.
+    pauseMediaForSpeech();
     setTimeout(() => {
-      try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); }
+      try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); resumeMediaAfterSpeech(); }
     }, 0);
     if (DEBUG){
       setTimeout(() => {
@@ -1222,6 +1228,13 @@ window.addEventListener('unhandledrejection', function(e){
         keepAliveAudio.play().catch(() => { /* retried on the next tick */ });
       }
     } catch(e){ /* lásd fenti megjegyzés */ }
+  }
+  function pauseMediaForSpeech(){
+    try{ if (keepAliveAudio) keepAliveAudio.pause(); } catch(e){}
+    try{ if (keepAwakeVideo) keepAwakeVideo.pause(); } catch(e){}
+  }
+  function resumeMediaAfterSpeech(){
+    if (running) startKeepAwakeMedia();
   }
   function stopKeepAwakeMedia(){
     if (keepAwakeVideo) keepAwakeVideo.pause();
