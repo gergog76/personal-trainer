@@ -1037,6 +1037,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (!Ctx) return false;
     try{ audioCtx = new Ctx(); } catch(e){ audioCtx = null; return false; }
     audioStuckSince = 0;
+    audioCtx.onstatechange = () => dbg('audioCtx: ' + audioCtx.state);
     // Resume and prime immediately - a fresh context starts out suspended.
     tryResume();
     primeAudio();
@@ -1073,6 +1074,26 @@ window.addEventListener('unhandledrejection', function(e){
     return !!audioCtx && audioCtx.state === 'running';
   }
 
+  // Hibakereső sáv: csak akkor jelenik meg, ha az URL-ben van "?debug". Az
+  // iPhone-on nincs konzol, ez mutatja, hová vész el a hangbemondás.
+  const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
+  const dbgLines = [];
+  let dbgEl = null;
+  if (DEBUG){
+    dbgEl = document.createElement('div');
+    dbgEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:998;background:rgba(0,0,0,.8);'
+      + 'color:#9f9;font:10px/1.35 ui-monospace,Menlo,monospace;padding:4px 6px;white-space:pre-wrap;'
+      + 'pointer-events:none;max-height:35vh;overflow:hidden;';
+    document.body.appendChild(dbgEl);
+  }
+  function dbg(msg){
+    if (!DEBUG) return;
+    const t = new Date().toTimeString().slice(0, 8);
+    dbgLines.push(t + ' ' + msg);
+    if (dbgLines.length > 10) dbgLines.shift();
+    dbgEl.textContent = dbgLines.join('\n');
+  }
+
   function pickHuVoice(){
     if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
@@ -1101,22 +1122,42 @@ window.addEventListener('unhandledrejection', function(e){
 
   function speakNextExercise(phase){
     if (muted) return;
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)){ dbg('speech: nincs speechSynthesis'); return; }
     const ex = getCardExercise(phase);
     if (!ex || !ex.name) return;
     const synth = window.speechSynthesis;
+    // A hanglista iOS-en késve vagy frissítés után üresen/újrarendezve
+    // érkezhet, ezért minden bemondás előtt újra megkeressük a magyar hangot.
+    pickHuVoice();
     // iOS can leave the utterance queue paused or stuck behind an item that
-    // never finishes; clearing and resuming first stops announcements from
-    // piling up and arriving seconds late.
-    try{ synth.cancel(); synth.resume(); } catch(e){}
+    // never finishes; clearing and resuming stops announcements from piling
+    // up and arriving seconds late. Csak akkor törlünk, ha tényleg van mit:
+    // a felesleges cancel() közvetlenül a speak() előtt újabb iOS-eken
+    // elnyelheti a bemondást.
+    try{
+      if (synth.speaking || synth.pending || synth.paused) synth.cancel();
+      synth.resume();
+    } catch(e){ dbg('cancel/resume hiba: ' + e); }
     const utter = new SpeechSynthesisUtterance(ex.name);
     if (huVoice) utter.voice = huVoice;
     utter.lang = (huVoice && huVoice.lang) || 'hu-HU';
     utter.rate = 1;
     utter.pitch = 1;
-    // A speak() issued in the same turn as cancel() is silently dropped on
-    // some iOS versions, so hand it over on the next event-loop turn.
-    setTimeout(() => { try{ synth.speak(utter); } catch(e){} }, 0);
+    let started = false;
+    utter.onstart = () => { started = true; dbg('start: ' + ex.name); };
+    utter.onend = () => dbg('end: ' + ex.name);
+    utter.onerror = (e) => dbg('HIBA: ' + (e && e.error) + ' (' + ex.name + ')');
+    dbg('speak "' + ex.name + '" hang=' + (huVoice ? huVoice.name + ' ' + huVoice.lang : 'NINCS')
+      + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-'));
+    setTimeout(() => {
+      try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); }
+    }, 0);
+    if (DEBUG){
+      setTimeout(() => {
+        if (!started) dbg('NEM indult el 1.5 mp után: speaking=' + synth.speaking
+          + ' pending=' + synth.pending + ' paused=' + synth.paused);
+      }, 1500);
+    }
   }
 
   // Announces the upcoming exercise as soon as a rest phase begins.
