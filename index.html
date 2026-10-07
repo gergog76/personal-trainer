@@ -1098,7 +1098,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return;
-    huVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('hu')) || null;
+    huVoice = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('hu')) || null;
   }
   if ('speechSynthesis' in window){
     pickHuVoice();
@@ -1139,15 +1139,21 @@ window.addEventListener('unhandledrejection', function(e){
       synth.resume();
     } catch(e){ dbg('cancel/resume hiba: ' + e); }
     const utter = new SpeechSynthesisUtterance(ex.name);
-    if (huVoice) utter.voice = huVoice;
-    utter.lang = (huVoice && huVoice.lang) || 'hu-HU';
+    // Újabb Safarik null "voice" mellett azonnal, némán leállnak, ezért mindig
+    // explicit hangot adunk: a magyart, ennek hiányában az alapértelmezettet.
+    const voice = huVoice || (function(){
+      const all = synth.getVoices();
+      return all.find(v => v.default) || all[0] || null;
+    })();
+    if (voice) utter.voice = voice;
+    utter.lang = (voice && voice.lang) || 'hu-HU';
     utter.rate = 1;
     utter.pitch = 1;
     let started = false;
     utter.onstart = () => { started = true; dbg('start: ' + ex.name); };
     utter.onend = () => dbg('end: ' + ex.name);
     utter.onerror = (e) => dbg('HIBA: ' + (e && e.error) + ' (' + ex.name + ')');
-    dbg('speak "' + ex.name + '" hang=' + (huVoice ? huVoice.name + ' ' + huVoice.lang : 'NINCS')
+    dbg('speak "' + ex.name + '" hang=' + (voice ? voice.name + ' ' + voice.lang + (huVoice ? '' : ' (nem magyar!)') : 'NINCS')
       + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-'));
     setTimeout(() => {
       try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); }
