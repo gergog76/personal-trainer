@@ -23,6 +23,10 @@ import {
   serialize,
   GENERATED_FILE,
   DATA_DIR,
+  AUDIO_DIR,
+  AUDIO_EXT,
+  audioSlug,
+  spokenNames,
 } from '../lib/data-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -49,6 +53,17 @@ function listImages() {
   return new Set(fs.readdirSync(dir).map((f) => `images/${f}`));
 }
 
+// Az `audio/` mappában lévő bemondás-fájlok slugjai (lásd scripts/generate-audio.mjs).
+function listAudio() {
+  const dir = path.join(REPO_ROOT, AUDIO_DIR);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(AUDIO_EXT))
+    .map((f) => f.slice(0, -AUDIO_EXT.length))
+    .sort();
+}
+
 function main() {
   const fileMap = readDataFiles();
   const { data, errors: parseErrors, warnings: parseWarnings } = filesToDataset(fileMap);
@@ -66,6 +81,23 @@ function main() {
     process.exit(1);
   }
 
+  // Az időzítő ebből tudja, melyik névhez van hangfájl; ahol nincs, élő
+  // felolvasásra esik vissza. A hiányzók csak figyelmeztetést érdemelnek.
+  data.audio = listAudio();
+  const have = new Set(data.audio);
+  const missingAudio = new Set();
+  for (const ex of Object.values(data.exercises)) {
+    for (const text of spokenNames(ex)) {
+      if (!have.has(audioSlug(text))) missingAudio.add(text);
+    }
+  }
+  if (missingAudio.size) {
+    console.warn(
+      `  figyelmeztetés: ${missingAudio.size} bemondott névhez nincs hangfájl az ${AUDIO_DIR}/ mappában ` +
+        '(élő felolvasás lesz helyette) – készítsd el: node scripts/generate-audio.mjs'
+    );
+  }
+
   data._meta = {
     context: process.env.CONTEXT || 'local',
     commit: process.env.COMMIT_REF || null,
@@ -78,6 +110,7 @@ function main() {
   const prCount = data.programs.length;
   console.log(
     `${GENERATED_FILE} kész: ${exCount} gyakorlat, ${prCount} program` +
+      `, ${data.audio.length} hangfájl` +
       (warnings.length ? `, ${warnings.length} figyelmeztetés` : '')
   );
 }

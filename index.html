@@ -518,6 +518,8 @@ window.addEventListener('unhandledrejection', function(e){
   let roundsByWorkout = {};
   let currentWorkoutId = 'core-alap';
   let WARMUP = [], MAIN = [], COOLDOWN = [], ROUND_REST = [];
+  // Azon bemondott szövegek slugjai, amikhez van előre felvett hangfájl (audio/).
+  let AUDIO_CLIPS = new Set();
   // A fő blokk körönként váltakozó gyakorlatait feloldó függvény
   // (workout-váltáskor és adatbetöltéskor frissül). Lásd makeMainResolver.
   let mainForRound = null;
@@ -626,6 +628,8 @@ window.addEventListener('unhandledrejection', function(e){
       WORKOUT_ORDER.push({ id: p.id, name: p.name });
       roundsByWorkout[p.id] = p.rounds;
     });
+
+    AUDIO_CLIPS = new Set(data.audio || []);
 
     ROUNDS_MIN = c.rounds_min;
     ROUNDS_MAX = c.rounds_max;
@@ -1131,11 +1135,128 @@ window.addEventListener('unhandledrejection', function(e){
     return REST_KINDS.includes(phase.kind);
   }
 
+  // ---- Előre felvett hangfájlok (audio/<slug>.m4a) ------------------------
+  // iOS-en az élő felolvasás (speechSynthesis) rendszerhang, ami átveszi a
+  // hangmunkamenetet, és kiüti az oldal többi hangját. A gyakorlat nevét ezért
+  // inkább hangfájlból játsszuk le ugyanazon az AudioContext-en, mint a
+  // sípolást: így a kettő (és a háttérben szóló podcast is) keveredik. A fájlokat
+  // a scripts/generate-audio.mjs készíti; ahol nincs, élő felolvasásra esünk vissza.
+  // Ugyanaz a slugify, mint a lib/data-schema.mjs-ben.
+  const audioSlug = (t) => (t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase();
+
+  const clipBuffers = {};
+  const clipLoading = {};
+  let decodeCtx = null;
+  let currentClip = null;
+
+  // A dekódoláshoz külön, offline kontextust használunk: ehhez nem kell
+  // felhasználói gesztus, így a hangfájlok már az oldal betöltésekor készen
+  // állnak, nem csak az első Play után. Az AudioBuffer bármely kontextusban lejátszható.
+  function getDecodeCtx(){
+    if (decodeCtx) return decodeCtx;
+    const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (Off){ try{ decodeCtx = new Off(1, 1, 44100); } catch(e){ decodeCtx = null; } }
+    return decodeCtx || audioCtx;
+  }
+
+  function decodeBuffer(arrayBuf){
+    return new Promise((resolve, reject) => {
+      const ctx = getDecodeCtx();
+      if (!ctx){ reject(new Error('nincs AudioContext a dekódoláshoz')); return; }
+      const r = ctx.decodeAudioData(arrayBuf, resolve, reject);
+      if (r && r.catch) r.catch(reject);
+    });
+  }
+
+  function loadClip(slug){
+    if (clipBuffers[slug]) return Promise.resolve(clipBuffers[slug]);
+    if (clipLoading[slug]) return clipLoading[slug];
+    const p = fetch('audio/' + slug + '.m4a')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(decodeBuffer)
+      .then(buf => { clipBuffers[slug] = buf; return buf; })
+      .catch(e => { dbg('hangfájl betöltése sikertelen (' + slug + '): ' + e); delete clipLoading[slug]; return null; });
+    clipLoading[slug] = p;
+    return p;
+  }
+
+  // Az aktuális edzés összes bemondott nevéhez betölti a hangfájlt (ha van).
+  function preloadClips(){
+    if (!AUDIO_CLIPS.size) return;
+    const names = new Set();
+    const add = (arr) => (arr || []).forEach(it => { if (it && it.name) names.add(it.name); });
+    add(WARMUP); add(COOLDOWN); add(ROUND_REST);
+    for (let r = 1; r <= ROUNDS_MAX; r++) add(mainForRound ? mainForRound(r) : MAIN);
+    names.forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
+  }
+
+  function stopClip(){
+    if (!currentClip) return;
+    try{ currentClip.stop(); } catch(e){}
+    currentClip = null;
+  }
+
+  function startClip(slug){
+    const buf = clipBuffers[slug];
+    if (!buf || !audioCtx || audioCtx.state !== 'running') return false;
+    try{
+      stopClip();
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const gain = audioCtx.createGain();
+      gain.gain.value = 1;
+      src.connect(gain).connect(audioCtx.destination);
+      src.onended = () => { if (currentClip === src) currentClip = null; dbg('hangfájl vége: ' + slug); };
+      src.start();
+      currentClip = src;
+      dbg('hangfájl indul: ' + slug + ' (' + buf.duration.toFixed(1) + ' mp)');
+      return true;
+    } catch(e){
+      dbg('hangfájl lejátszási hiba: ' + e);
+      return false;
+    }
+  }
+
+  // Lejátssza a hangfájlt; ha az AudioContext még nem fut (pl. épp most indult
+  // az első Play után), megvárja az újraindulását, de legfeljebb 600 ms-ig.
+  function playClipWhenReady(slug){
+    return new Promise(resolve => {
+      if (!audioCtx || audioCtx.state === 'closed'){ resolve(false); return; }
+      if (audioCtx.state === 'running'){ resolve(startClip(slug)); return; }
+      let settled = false;
+      const timer = setTimeout(() => { if (!settled){ settled = true; resolve(false); } }, 600);
+      try{
+        audioCtx.resume().then(() => {
+          if (settled) return;
+          settled = true; clearTimeout(timer);
+          resolve(startClip(slug));
+        }).catch(() => {});
+      } catch(e){ settled = true; clearTimeout(timer); resolve(false); }
+    });
+  }
+
   function speakNextExercise(phase){
     if (muted) return;
-    if (!('speechSynthesis' in window)){ dbg('speech: nincs speechSynthesis'); return; }
     const ex = getCardExercise(phase);
     if (!ex || !ex.name) return;
+    const slug = audioSlug(ex.name);
+    if (AUDIO_CLIPS.has(slug)){
+      if (clipBuffers[slug]){
+        playClipWhenReady(slug).then(ok => {
+          if (!ok){ dbg('hangfájl nem játszható le, élő felolvasás: ' + ex.name); speakWithVoice(ex); }
+        });
+        return;
+      }
+      dbg('hangfájl még nem töltődött be (' + slug + '), élő felolvasás');
+    }
+    speakWithVoice(ex);
+  }
+
+  // Élő felolvasás (tartalék, ha nincs hangfájl).
+  function speakWithVoice(ex){
+    if (muted) return;
+    if (!('speechSynthesis' in window)){ dbg('speech: nincs speechSynthesis'); return; }
     const synth = window.speechSynthesis;
     // A hanglista iOS-en késve vagy frissítés után üresen/újrarendezve
     // érkezhet, ezért minden bemondás előtt újra megkeressük a magyar hangot.
@@ -1489,6 +1610,7 @@ window.addEventListener('unhandledrejection', function(e){
   }
   function pause(){
     running = false;
+    stopClip();
     stopTick();
     releaseWakeLock();
     render();
@@ -1674,6 +1796,7 @@ window.addEventListener('unhandledrejection', function(e){
     exCard.classList.remove('open');
 
     buildDots();
+    preloadClips();
     workoutItems.forEach(el => el.classList.toggle('active', el.dataset.id === id));
     renderRoundsUI();
     render();
@@ -1779,6 +1902,7 @@ window.addEventListener('unhandledrejection', function(e){
 
   renderRoundsUI();
   render();
+  preloadClips();
 })();
 </script>
 </body>
