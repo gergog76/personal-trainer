@@ -1240,15 +1240,28 @@ window.addEventListener('unhandledrejection', function(e){
     } catch(e){ /* lásd fenti megjegyzés */ }
   }
   // A bemondás idejére lezárjuk a hangmunkamenetet (lásd speechActive): a
-  // háttérhang nem indulhat újra, az AudioContext nem éleszthető újra. A média
-  // szüneteltetése NEM megoldás: ha leállítjuk, az iOS elengedi a munkamenetet,
-  // és a beszéd azonnal, hang nélkül véget ér.
+  // háttérhang nem indulhat újra, az AudioContext nem éleszthető újra, és
+  // magát az AudioContext-et is felfüggesztjük. iOS-en a futó Web Audio a
+  // beszéd közben "interrupted" állapotba kerül, és ilyenkor a bemondás nem
+  // hallatszik; felfüggesztve a beszéd rendesen megszólal. A sípolás ez idő
+  // alatt a hangelemes pótmegoldásra vált, a bemondás végén (onend/onerror)
+  // éleszthető újra az AudioContext. A háttérhang szüneteltetése NEM
+  // megoldás (az iOS elengedi a munkamenetet, és a beszéd hang nélkül ér véget).
   function pauseMediaForSpeech(){
     speechActive = true;
     // Biztonsági háló: ha az onend/onerror sosem érkezik meg, 8 mp után
     // mindenképp visszaadjuk a hangmunkamenetet.
     clearTimeout(speechActiveTimer);
     speechActiveTimer = setTimeout(resumeMediaAfterSpeech, 8000);
+    // Feltétel nélkül, nem csak "running" állapotban: egy épp induló
+    // AudioContext resume()-ja még függőben lehet, a suspend() a sorban utána
+    // fut le, így a végállapot felfüggesztett.
+    try{
+      if (audioCtx && audioCtx.state !== 'closed'){
+        const p = audioCtx.suspend();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch(e){}
   }
   function resumeMediaAfterSpeech(){
     clearTimeout(speechActiveTimer);
