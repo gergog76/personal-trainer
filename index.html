@@ -1348,6 +1348,8 @@ window.addEventListener('unhandledrejection', function(e){
   }
   let beepCursor = 0;
   function elementBeep(tone){
+    // Bemondás közben a hangelemes sípolás elnyomná a beszédet.
+    if (speechActive) return;
     initBeepPool();
     const pool = beepPool[tone];
     if (!pool.length) return;
@@ -1364,7 +1366,7 @@ window.addEventListener('unhandledrejection', function(e){
   // Schedules a beep through Web Audio when it is healthy, otherwise falls
   // back to a media element. `delay` is seconds from now.
   function beep(freq, dur, delay){
-    if (muted) return;
+    if (muted || speechActive) return;
     if (audioReady()){
       try{
         const when = audioCtx.currentTime + Math.max(0.01, delay);
