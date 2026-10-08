@@ -1078,9 +1078,11 @@ window.addEventListener('unhandledrejection', function(e){
   // Hibakereső sáv: csak akkor jelenik meg, ha az URL-ben van "?debug". Az
   // iPhone-on nincs konzol, ez mutatja, hová vész el a hangbemondás.
   const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
-  // "?nomedia": kísérleti kapcsoló - kikapcsolja a néma háttérhang/videó
-  // trükköt, hogy el lehessen dönteni, ez zavarja-e a bemondást.
-  const NOMEDIA = /[?&]nomedia(?:[=&]|$)/.test(location.search);
+  // A néma háttérhang/videó trükk (képernyő-zár és hangmunkamenet életben
+  // tartása) iOS 27-en ütközik a beszédszintézissel: a bemondás indulásakor az
+  // iOS leállítja, és a beszéd elhalkul vagy meg sem szólal. Ezért csak akkor
+  // használjuk, ha nincs Wake Lock API, vagy ha az URL-ben "?media" van.
+  const USE_MEDIA = /[?&]media(?:[=&]|$)/.test(location.search) || !('wakeLock' in navigator);
   // Igaz a bemondás kérésétől a végéig: ezalatt semmi nem nyúlhat a hang-
   // munkamenethez (média újraindítás, AudioContext újraélesztés).
   let speechActive = false;
@@ -1101,7 +1103,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (dbgLines.length > 10) dbgLines.shift();
     dbgEl.textContent = dbgLines.join('\n');
   }
-  if (NOMEDIA) dbg('nomedia: háttérhang/videó KIKAPCSOLVA');
+  dbg('háttérhang/videó: ' + (USE_MEDIA ? 'BE' : 'KI (Wake Lock)'));
 
   function pickHuVoice(){
     if (!('speechSynthesis' in window)) return;
@@ -1166,10 +1168,8 @@ window.addEventListener('unhandledrejection', function(e){
     dbg('speak "' + ex.name + '" hang=' + (voice ? voice.name + ' ' + voice.lang + (huVoice ? '' : ' (nem magyar!)') : 'NINCS')
       + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-')
       + ' audioSession=' + ((navigator.audioSession && navigator.audioSession.type) || 'nincs'));
-    // iOS 27-en a bemondás indulása után ~1 mp-cel az iOS maga szünetelteti a
-    // néma háttérhangot/videót, és ez menet közben elhalkítja a beszédet. Ezért
-    // még a bemondás ELŐTT mi állítjuk le őket, hogy a hangmunkamenet ne
-    // beszéd közben váltson; a végén (onend/onerror) újraindítjuk.
+    // Bemondás közben nem nyúlunk a hangmunkamenethez; a végén (onend/onerror)
+    // adjuk vissza.
     pauseMediaForSpeech();
     setTimeout(() => {
       try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); resumeMediaAfterSpeech(); }
@@ -1219,7 +1219,7 @@ window.addEventListener('unhandledrejection', function(e){
   }
 
   function startKeepAwakeMedia(){
-    if (NOMEDIA || speechActive) return;
+    if (!USE_MEDIA || speechActive) return;
     // A play() a specifikáció szerint mindig Promise-t ad vissza, de néhány
     // motorban (pl. iOS-en bizonyos háttérből visszatérő állapotban) szinkron
     // hibát is dobhat - ez nélkül a próbálkozás megszakítaná a teljes play()
@@ -1239,20 +1239,16 @@ window.addEventListener('unhandledrejection', function(e){
       }
     } catch(e){ /* lásd fenti megjegyzés */ }
   }
+  // A bemondás idejére lezárjuk a hangmunkamenetet (lásd speechActive): a
+  // háttérhang nem indulhat újra, az AudioContext nem éleszthető újra. A média
+  // szüneteltetése NEM megoldás: ha leállítjuk, az iOS elengedi a munkamenetet,
+  // és a beszéd azonnal, hang nélkül véget ér.
   function pauseMediaForSpeech(){
     speechActive = true;
     // Biztonsági háló: ha az onend/onerror sosem érkezik meg, 8 mp után
     // mindenképp visszaadjuk a hangmunkamenetet.
     clearTimeout(speechActiveTimer);
     speechActiveTimer = setTimeout(resumeMediaAfterSpeech, 8000);
-    try{ if (keepAliveAudio) keepAliveAudio.pause(); } catch(e){}
-    try{ if (keepAwakeVideo) keepAwakeVideo.pause(); } catch(e){}
-    try{
-      if (audioCtx && audioCtx.state === 'running'){
-        const p = audioCtx.suspend();
-        if (p && p.catch) p.catch(() => {});
-      }
-    } catch(e){}
   }
   function resumeMediaAfterSpeech(){
     clearTimeout(speechActiveTimer);
