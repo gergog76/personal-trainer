@@ -1011,7 +1011,7 @@ window.addEventListener('unhandledrejection', function(e){
   let audioStuckSince = 0;
 
   function tryResume(){
-    if (!audioCtx) return;
+    if (!audioCtx || speechActive) return;
     try{
       const p = audioCtx.resume();
       if (p && p.catch) p.catch(() => {});
@@ -1047,6 +1047,7 @@ window.addEventListener('unhandledrejection', function(e){
   // `inGesture` must be true only when called synchronously from a real user
   // interaction; iOS refuses to revive audio at any other time.
   function ensureAudio(inGesture){
+    if (speechActive) return;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     if (!audioCtx || audioCtx.state === 'closed'){
@@ -1077,6 +1078,13 @@ window.addEventListener('unhandledrejection', function(e){
   // Hibakereső sáv: csak akkor jelenik meg, ha az URL-ben van "?debug". Az
   // iPhone-on nincs konzol, ez mutatja, hová vész el a hangbemondás.
   const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
+  // "?nomedia": kísérleti kapcsoló - kikapcsolja a néma háttérhang/videó
+  // trükköt, hogy el lehessen dönteni, ez zavarja-e a bemondást.
+  const NOMEDIA = /[?&]nomedia(?:[=&]|$)/.test(location.search);
+  // Igaz a bemondás kérésétől a végéig: ezalatt semmi nem nyúlhat a hang-
+  // munkamenethez (média újraindítás, AudioContext újraélesztés).
+  let speechActive = false;
+  let speechActiveTimer = null;
   const dbgLines = [];
   let dbgEl = null;
   if (DEBUG){
@@ -1093,6 +1101,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (dbgLines.length > 10) dbgLines.shift();
     dbgEl.textContent = dbgLines.join('\n');
   }
+  if (NOMEDIA) dbg('nomedia: háttérhang/videó KIKAPCSOLVA');
 
   function pickHuVoice(){
     if (!('speechSynthesis' in window)) return;
@@ -1210,6 +1219,7 @@ window.addEventListener('unhandledrejection', function(e){
   }
 
   function startKeepAwakeMedia(){
+    if (NOMEDIA || speechActive) return;
     // A play() a specifikáció szerint mindig Promise-t ad vissza, de néhány
     // motorban (pl. iOS-en bizonyos háttérből visszatérő állapotban) szinkron
     // hibát is dobhat - ez nélkül a próbálkozás megszakítaná a teljes play()
@@ -1230,11 +1240,26 @@ window.addEventListener('unhandledrejection', function(e){
     } catch(e){ /* lásd fenti megjegyzés */ }
   }
   function pauseMediaForSpeech(){
+    speechActive = true;
+    // Biztonsági háló: ha az onend/onerror sosem érkezik meg, 8 mp után
+    // mindenképp visszaadjuk a hangmunkamenetet.
+    clearTimeout(speechActiveTimer);
+    speechActiveTimer = setTimeout(resumeMediaAfterSpeech, 8000);
     try{ if (keepAliveAudio) keepAliveAudio.pause(); } catch(e){}
     try{ if (keepAwakeVideo) keepAwakeVideo.pause(); } catch(e){}
+    try{
+      if (audioCtx && audioCtx.state === 'running'){
+        const p = audioCtx.suspend();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch(e){}
   }
   function resumeMediaAfterSpeech(){
-    if (running) startKeepAwakeMedia();
+    clearTimeout(speechActiveTimer);
+    speechActive = false;
+    if (!running) return;
+    tryResume();
+    startKeepAwakeMedia();
   }
   function stopKeepAwakeMedia(){
     if (keepAwakeVideo) keepAwakeVideo.pause();
@@ -1270,7 +1295,7 @@ window.addEventListener('unhandledrejection', function(e){
     // miatt szüneteltette a néma háttérhangot, az újraindítás (play())
     // visszavehetné az audio-munkamenetet, és elhalkítaná/megszakítaná a
     // bemondást. A következő tick újra próbálja.
-    if ('speechSynthesis' in window && window.speechSynthesis.speaking) return;
+    if (speechActive || ('speechSynthesis' in window && window.speechSynthesis.speaking)) return;
     lastKeepAwakeCheck = now;
     ensureAudio();
     requestWakeLock();
