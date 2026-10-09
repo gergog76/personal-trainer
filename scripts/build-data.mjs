@@ -27,6 +27,7 @@ import {
   AUDIO_EXT,
   audioSlug,
   spokenNames,
+  spokenMessageTexts,
 } from '../lib/data-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,6 +91,9 @@ function main() {
     for (const text of spokenNames(ex)) {
       if (!have.has(audioSlug(text))) missingAudio.add(text);
     }
+  }
+  for (const text of spokenMessageTexts(data.messages)) {
+    if (!have.has(audioSlug(text))) missingAudio.add(text);
   }
   if (missingAudio.size) {
     console.warn(

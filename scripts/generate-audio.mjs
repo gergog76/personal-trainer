@@ -28,6 +28,8 @@ import {
   AUDIO_EXT,
   audioSlug,
   spokenNames,
+  spokenMessageTexts,
+  MESSAGES_FILE,
 } from '../lib/data-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,7 +58,31 @@ function collectTexts() {
       bySlug.set(slug, text);
     }
   }
+  const messagesPath = path.join(REPO_ROOT, MESSAGES_FILE);
+  if (fs.existsSync(messagesPath)) {
+    for (const text of spokenMessageTexts(JSON.parse(fs.readFileSync(messagesPath, 'utf8')))) {
+      const slug = audioSlug(text);
+      if (!slug) continue;
+      const prev = bySlug.get(slug);
+      if (prev && prev !== text) {
+        console.error(`✗ Fájlnév-ütközés: "${prev}" és "${text}" ugyanarra a névre (${slug}) képződik le.`);
+        process.exit(1);
+      }
+      bySlug.set(slug, text);
+    }
+  }
   return bySlug;
+}
+
+// Az audio/ mappában lévő, de már egyetlen szöveghez sem tartozó fájlok (pl. átírt
+// üzenet régi hangfájlja). Nem töröljük, csak jelezzük.
+function unusedAudio(texts) {
+  const dir = path.join(REPO_ROOT, AUDIO_DIR);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(AUDIO_EXT) && !texts.has(f.slice(0, -AUDIO_EXT.length)))
+    .sort();
 }
 
 // A `say -v '?'` kimenetének sorai: "Tünde   hu_HU    # Szia! ..." - a nyelvkód
@@ -105,6 +131,11 @@ function main() {
   );
 
   console.log(`${texts.size} bemondott szöveg, ebből ${todo.length} hiányzik az ${AUDIO_DIR}/ mappából.`);
+  const unused = unusedAudio(texts);
+  if (unused.length) {
+    console.log(`Megjegyzés: ${unused.length} fájl az ${AUDIO_DIR}/ mappában már egy szöveghez sem tartozik (törölhető):`);
+    for (const f of unused) console.log(`  ${AUDIO_DIR}/${f}`);
+  }
 
   if (flag('--dry-run')) {
     for (const [slug, text] of todo) console.log(`  ${slug}${AUDIO_EXT}  <-  "${text}"`);

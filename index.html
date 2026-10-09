@@ -520,6 +520,8 @@ window.addEventListener('unhandledrejection', function(e){
   let WARMUP = [], MAIN = [], COOLDOWN = [], ROUND_REST = [];
   // Azon bemondott szövegek slugjai, amikhez van előre felvett hangfájl (audio/).
   let AUDIO_CLIPS = new Set();
+  // Az edzés elején/végén bemondott üzenetek szövegei (data/messages.json).
+  let MESSAGES = { start: [], end: [] };
   // A fő blokk körönként váltakozó gyakorlatait feloldó függvény
   // (workout-váltáskor és adatbetöltéskor frissül). Lásd makeMainResolver.
   let mainForRound = null;
@@ -630,6 +632,7 @@ window.addEventListener('unhandledrejection', function(e){
     });
 
     AUDIO_CLIPS = new Set(data.audio || []);
+    MESSAGES = Object.assign({ start: [], end: [] }, data.messages || {});
 
     ROUNDS_MIN = c.rounds_min;
     ROUNDS_MAX = c.rounds_max;
@@ -1166,7 +1169,8 @@ window.addEventListener('unhandledrejection', function(e){
   const clipLoading = {};
   const clipFailed = {};
   let decodeCtx = null;
-  let currentClip = null;
+  let currentClips = [];
+  let introPlayed = false;
 
   // A dekódoláshoz külön, offline kontextust használunk: ehhez nem kell
   // felhasználói gesztus, így a hangfájlok már az oldal betöltésekor készen
@@ -1211,7 +1215,9 @@ window.addEventListener('unhandledrejection', function(e){
   // Az aktuális edzés összes bemondott nevéhez betölti a hangfájlt (ha van).
   function preloadClips(){
     if (!AUDIO_CLIPS.size) return;
-    workoutSpokenNames().forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
+    const names = workoutSpokenNames();
+    (MESSAGES.start || []).concat(MESSAGES.end || []).forEach(t => names.add(t));
+    names.forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
   }
 
   // Kell-e az élő felolvasás tartaléknak (hiányzó vagy nem dekódolható hangfájl)?
@@ -1226,25 +1232,37 @@ window.addEventListener('unhandledrejection', function(e){
   }
 
   function stopClip(){
-    if (!currentClip) return;
-    try{ currentClip.stop(); } catch(e){}
-    currentClip = null;
+    currentClips.forEach(c => { try{ c.onended = null; c.stop(); } catch(e){} });
+    currentClips = [];
   }
 
-  function startClip(slug){
-    const buf = clipBuffers[slug];
-    if (!buf || !audioCtx || audioCtx.state !== 'running') return false;
+  // Egymás után ütemezi a hangfájlokat az AudioContext órája szerint, kis
+  // szünetekkel köztük. Az onEnd az utolsó befejezésekor fut (leállításkor nem).
+  const CLIP_GAP_SEC = 0.35;
+  function startClips(slugs, onEnd){
+    if (!audioCtx || audioCtx.state !== 'running') return false;
+    const bufs = slugs.map(sl => clipBuffers[sl]);
+    if (!bufs.length || bufs.some(b => !b)) return false;
     try{
       stopClip();
-      const src = audioCtx.createBufferSource();
-      src.buffer = buf;
-      const gain = audioCtx.createGain();
-      gain.gain.value = 1;
-      src.connect(gain).connect(audioCtx.destination);
-      src.onended = () => { if (currentClip === src) currentClip = null; dbg('hangfájl vége: ' + slug); };
-      src.start();
-      currentClip = src;
-      dbg('hangfájl indul: ' + slug + ' (' + buf.duration.toFixed(1) + ' mp)');
+      let t = audioCtx.currentTime + 0.05;
+      bufs.forEach((buf, i) => {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const gain = audioCtx.createGain();
+        gain.gain.value = 1;
+        src.connect(gain).connect(audioCtx.destination);
+        const last = i === bufs.length - 1;
+        src.onended = () => {
+          currentClips = currentClips.filter(c => c !== src);
+          dbg('hangfájl vége: ' + slugs[i]);
+          if (last && onEnd) onEnd();
+        };
+        src.start(t);
+        currentClips.push(src);
+        dbg('hangfájl indul: ' + slugs[i] + ' (' + buf.duration.toFixed(1) + ' mp)');
+        t += buf.duration + CLIP_GAP_SEC;
+      });
       return true;
     } catch(e){
       dbg('hangfájl lejátszási hiba: ' + e);
@@ -1252,21 +1270,38 @@ window.addEventListener('unhandledrejection', function(e){
     }
   }
 
-  // Lejátssza a hangfájlt; ha az AudioContext még nem fut (pl. épp most indult
-  // az első Play után), megvárja az újraindulását, de legfeljebb 600 ms-ig.
-  function playClipWhenReady(slug){
+  // Lejátssza a hangfájlokat; ha az AudioContext még nem fut (pl. épp most
+  // indult az első Play után), megvárja az újraindulását, de legfeljebb 600 ms-ig.
+  function playClipsWhenReady(slugs, onEnd){
     return new Promise(resolve => {
       if (!audioCtx || audioCtx.state === 'closed'){ resolve(false); return; }
-      if (audioCtx.state === 'running'){ resolve(startClip(slug)); return; }
+      if (audioCtx.state === 'running'){ resolve(startClips(slugs, onEnd)); return; }
       let settled = false;
       const timer = setTimeout(() => { if (!settled){ settled = true; resolve(false); } }, 600);
       try{
         audioCtx.resume().then(() => {
           if (settled) return;
           settled = true; clearTimeout(timer);
-          resolve(startClip(slug));
+          resolve(startClips(slugs, onEnd));
         }).catch(() => {});
       } catch(e){ settled = true; clearTimeout(timer); resolve(false); }
+    });
+  }
+
+  // Egy üzenetlista (start/end) betöltött hangfájljainak slugjai.
+  function messageSlugs(list){
+    return (list || []).map(audioSlug).filter(sl => clipBuffers[sl]);
+  }
+  function clipsDurationSec(slugs){
+    return slugs.reduce((sum, sl) => sum + clipBuffers[sl].duration + CLIP_GAP_SEC, 0);
+  }
+
+  // Az edzés végén a lezáró üzenet; utána az oldal elengedi a hangmunkamenetet.
+  function playOutro(){
+    const slugs = messageSlugs(MESSAGES.end);
+    if (!slugs.length || muted) return;
+    playClipsWhenReady(slugs, releaseAudioWhilePaused).then(ok => {
+      if (!ok) dbg('lezáró üzenet nem játszható le');
     });
   }
 
@@ -1275,15 +1310,24 @@ window.addEventListener('unhandledrejection', function(e){
     const ex = getCardExercise(phase);
     if (!ex || !ex.name) return;
     const slug = audioSlug(ex.name);
-    if (AUDIO_CLIPS.has(slug)){
-      if (clipBuffers[slug]){
-        playClipWhenReady(slug).then(ok => {
-          if (!ok){ dbg('hangfájl nem játszható le, élő felolvasás: ' + ex.name); speakWithVoice(ex); }
-        });
-        return;
-      }
-      dbg('hangfájl még nem töltődött be (' + slug + '), élő felolvasás');
+    const haveClip = AUDIO_CLIPS.has(slug) && !!clipBuffers[slug];
+
+    // Az edzés legelső bemondása előtt az üdvözlés és az emlékeztető szól (a
+    // "start" üzenetek), utána jön az első gyakorlat neve. Ahol nincs hangfájl,
+    // az üzenet elmarad - élő felolvasás csak a gyakorlat nevére van tartalékként.
+    const lead = (phase.kind === 'prep' && !introPlayed) ? messageSlugs(MESSAGES.start) : [];
+    if (phase.kind === 'prep') introPlayed = true;
+
+    if (haveClip || lead.length){
+      const slugs = lead.concat(haveClip ? [slug] : []);
+      playClipsWhenReady(slugs).then(ok => {
+        if (!ok){ dbg('hangfájl nem játszható le, élő felolvasás: ' + ex.name); speakWithVoice(ex); return; }
+        // Ha a névhez nincs hangfájl, az élő felolvasás az üzenetek után indul.
+        if (!haveClip) setTimeout(() => speakWithVoice(ex), clipsDurationSec(lead) * 1000);
+      });
+      return;
     }
+    if (AUDIO_CLIPS.has(slug)) dbg('hangfájl még nem töltődött be (' + slug + '), élő felolvasás');
     speakWithVoice(ex);
   }
 
@@ -1570,6 +1614,9 @@ window.addEventListener('unhandledrejection', function(e){
   }
 
   function advancePhase(){
+    // A lezáró üzenet csak az "done" fázisba ÉRKEZÉSKOR szól, nem minden
+    // további ▶▶ nyomásra, amikor már a végén állunk.
+    const alreadyDone = queue[qIndex].kind === 'done';
     qIndex++;
     lastDecade = null;
     lastSecondBeep = null;
@@ -1580,6 +1627,7 @@ window.addEventListener('unhandledrejection', function(e){
       running = false;
       stopTick();
       releaseWakeLock();
+      if (!alreadyDone) playOutro();
     }
     if (running) speakOnPhaseEnter();
     render();
@@ -1838,6 +1886,7 @@ window.addEventListener('unhandledrejection', function(e){
     appTitle.textContent = w.name;
 
     pause();
+    introPlayed = false;
     queue = buildQueue();
     qIndex = 0;
     remainingMs = queue[0].duration * 1000;
