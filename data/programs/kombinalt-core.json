@@ -40,11 +40,10 @@
         ]
       },
       {
-        "exerciseId": "allbehuzas-labdaval"
-      },
-      {
-        "exerciseId": "nyakforgatas-labdanyomassal",
-        "quickRest": true
+        "exerciseId": "allbehuzas-labdaval",
+        "variants": [
+          "nyakforgatas-labdanyomassal"
+        ]
       },
       {
         "exerciseId": "fektetett-nyolcas-labdaval"
@@ -57,14 +56,13 @@
         "exerciseId": "gerinccsavaras-labak"
       },
       {
-        "exerciseId": "fekvotamasz"
+        "exerciseId": "fekvotamasz",
+        "variants": [
+          "hegymaszo"
+        ]
       },
       {
         "exerciseId": "plank",
-        "quickRest": true
-      },
-      {
-        "exerciseId": "hegymaszo",
         "quickRest": true
       }
     ],
