@@ -1109,6 +1109,23 @@ window.addEventListener('unhandledrejection', function(e){
   }
   dbg('háttérhang/videó: ' + (USE_MEDIA ? 'BE' : 'KI (Wake Lock)'));
 
+  // Az oldal hangja (sípolás, bemondás) keveredjen más alkalmazások hangjával
+  // (pl. a háttérben szóló podcasttal), ne szakítsa meg azokat. A Safari
+  // navigator.audioSession API-ja (iOS 16.4+) ezt "ambient" típussal kéri; a
+  // "?mix=auto|playback|transient|ambient" az URL-ben felülírja kipróbáláshoz.
+  // Az "ambient" hang a hangerő-kapcsoló (némítás) szerint elnémul.
+  const MIX_TYPE = ((location.search.match(/[?&]mix=([a-z-]+)/) || [])[1]) || 'ambient';
+  function applyAudioSession(){
+    try{
+      if (!navigator.audioSession) return;
+      if (navigator.audioSession.type !== MIX_TYPE){
+        navigator.audioSession.type = MIX_TYPE;
+        dbg('audioSession.type = ' + navigator.audioSession.type);
+      }
+    } catch(e){ dbg('audioSession hiba: ' + e); }
+  }
+  applyAudioSession();
+
   function pickHuVoice(){
     if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
@@ -1598,6 +1615,7 @@ window.addEventListener('unhandledrejection', function(e){
 
   function play(){
     if (queue[qIndex].kind === 'done') return;
+    applyAudioSession();
     try{ ensureAudio(true); } catch(e){}
     try{ unlockSpeech(); } catch(e){}
     try{ unlockBeepPool(); } catch(e){}
