@@ -11,8 +11,8 @@
   "mirror": true,
   "sided": true,
   "side_labels": {
-    "left": "bal",
-    "right": "jobb"
+    "left": "balra",
+    "right": "jobbra"
   },
   "muscle_groups": [
     "also-hat",

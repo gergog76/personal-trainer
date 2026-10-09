@@ -26,10 +26,10 @@
     ],
     "main": [
       {
-        "exerciseId": "bird-dog"
-      },
-      {
-        "exerciseId": "dead-bug"
+        "exerciseId": "bird-dog",
+        "variants": [
+          "dead-bug"
+        ]
       },
       {
         "exerciseId": "csipoemeles-labdaval",
@@ -71,6 +71,9 @@
       {
         "exerciseId": "csipohajlito-nyujtas",
         "sided": true
+      },
+      {
+        "exerciseId": "hanyatt-fekvo-4-es-nyujtas"
       },
       {
         "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"

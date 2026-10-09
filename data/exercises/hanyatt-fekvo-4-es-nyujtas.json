@@ -6,7 +6,7 @@
   "description_switch": "Válts lábat...",
   "subtitle": "",
   "image": "images/hanyatt-fekvo-4-es-nyujtas.webp",
-  "duration_sec": null,
+  "duration_sec": 35,
   "quick_rest_default": false,
   "mirror": true,
   "sided": true,
