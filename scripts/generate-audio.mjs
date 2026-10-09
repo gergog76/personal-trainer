@@ -59,15 +59,33 @@ function collectTexts() {
   return bySlug;
 }
 
-// A `say -v '?'` kimenetének sorai: "Tünde   hu_HU    # Szia! ..."
-function hungarianVoices() {
-  const out = execFileSync('say', ['-v', '?'], { encoding: 'utf8' });
+// A `say -v '?'` kimenetének sorai: "Tünde   hu_HU    # Szia! ..." - a nyelvkód
+// macOS-verziótól függően hu_HU vagy hu-HU lehet, a megjegyzés pedig hiányozhat.
+export function parseSayVoices(output) {
   const voices = [];
-  for (const line of out.split('\n')) {
-    const m = line.match(/^(.+?)\s{2,}([a-z]{2}_[A-Z]{2})\s+#/);
-    if (m && m[2] === 'hu_HU') voices.push(m[1].trim());
+  for (const line of output.split('\n')) {
+    const m = line.match(/^(.+?)\s+([A-Za-z]{2,3}[_-][A-Za-z0-9]{2,4})\b/);
+    if (m) voices.push({ name: m[1].trim().normalize('NFC'), locale: m[2].replace('-', '_') });
   }
   return voices;
+}
+
+// Magyar hang: a nyelvkód alapján, vagy (ha a lista másképp néz ki) a név alapján.
+export function pickHungarian(voices) {
+  return voices
+    .filter((v) => /^hu(_|$)/i.test(v.locale) || /^t[uü]nde\b/i.test(v.name))
+    .map((v) => v.name);
+}
+
+function hungarianVoices() {
+  const out = execFileSync('say', ['-v', '?'], { encoding: 'utf8' });
+  const found = pickHungarian(parseSayVoices(out));
+  if (!found.length) {
+    // Segítség a hibakereséshez: mutassuk, mit adott a `say`.
+    const hints = out.split('\n').filter((l) => /hu|t[uü]nde|hung/i.test(l)).slice(0, 5);
+    if (hints.length) console.error('A `say -v ?` ide illő sorai:\n' + hints.map((l) => '  ' + l).join('\n'));
+  }
+  return found;
 }
 
 function pickVoice(voices) {
@@ -145,4 +163,4 @@ function main() {
   console.log('Következő lépés: node scripts/build-data.mjs, majd az audio/ mappa commitolása.');
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
