@@ -77,6 +77,9 @@ exercises: {
 programs: [
   { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...], roundRest?: [...] } }
   // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
+  // quickRest (bool, set with the ⚡ button on the editor's program rows) = the rest BEFORE this
+  // step is quick_rest_sec instead of rest_sec; absent = the exercise's quick_rest_default
+  // (ignored for the first side of a `sided` exercise)
   // main block items only: variants?: ["exId2", "exId3", ...]
 ]
 ```

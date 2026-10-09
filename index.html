@@ -554,6 +554,9 @@ window.addEventListener('unhandledrejection', function(e){
       const left = Object.assign({}, base, {
         name: base.name + (exercise.side_labels ? ' – ' + exercise.side_labels.left : ''),
       });
+      // A pihenő az első oldal előtt: csak a program-elem kifejezett beállítására
+      // gyors (a gyakorlat quick_rest_default értéke itt nem érvényes).
+      if (blockItem.quickRest === true) left.quickRest = true;
       const right = Object.assign({}, base, {
         name: base.name + (exercise.side_labels ? ' – ' + exercise.side_labels.right : ''),
         desc: exercise.description_switch || base.desc,
