@@ -11,14 +11,16 @@
         "quickRest": true
       },
       {
-        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen"
+        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen",
+        "quickRest": true
       },
       {
         "exerciseId": "csipokorzes-oramutato-jarasaval-ellentetesen",
         "quickRest": true
       },
       {
-        "exerciseId": "csipohajlito-bemozgatas"
+        "exerciseId": "csipohajlito-bemozgatas",
+        "quickRest": true
       },
       {
         "exerciseId": "macska-teve-mozgas"
@@ -41,7 +43,8 @@
         "exerciseId": "allbehuzas-labdaval"
       },
       {
-        "exerciseId": "nyakforgatas-labdanyomassal"
+        "exerciseId": "nyakforgatas-labdanyomassal",
+        "quickRest": true
       },
       {
         "exerciseId": "fektetett-nyolcas-labdaval"
@@ -57,10 +60,12 @@
         "exerciseId": "fekvotamasz"
       },
       {
-        "exerciseId": "plank"
+        "exerciseId": "plank",
+        "quickRest": true
       },
       {
-        "exerciseId": "hegymaszo"
+        "exerciseId": "hegymaszo",
+        "quickRest": true
       }
     ],
     "cooldown": [
