@@ -108,8 +108,12 @@ function main() {
 
   const voice = pickVoice(voices);
   if (!voice) {
-    console.error('✗ Nincs telepített magyar hang. Töltsd le: Rendszerbeállítások → Kisegítő lehetőségek →');
-    console.error('  Felolvasott tartalom → Rendszerhang → Hangok kezelése… → Magyar.');
+    console.error('✗ Nincs telepített magyar hang. Töltsd le:');
+    console.error('  (magyar macOS)  Rendszerbeállítások → Kisegítő lehetőségek → Felolvasott tartalom →');
+    console.error('                  Rendszerhang → Hangok kezelése… → Magyar → Tünde');
+    console.error('  (angol macOS)   System Settings → Accessibility → Spoken Content →');
+    console.error('                  System Voice → Manage Voices… → Hungarian → Tünde');
+    console.error('  Ellenőrzés: say -v \'?\' | grep hu_HU');
     process.exit(1);
   }
   console.log(`Hang: ${voice}` + (voices.length > 1 ? `  (magyar hangok: ${voices.join(', ')})` : ''));
