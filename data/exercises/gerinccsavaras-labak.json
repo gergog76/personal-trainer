@@ -1,0 +1,23 @@
+{
+  "name": "Gerinccsavarás, lábak",
+  "category": "main",
+  "equipment": [],
+  "description": "• Kiindulás: Feküdj a hátadra, karok oldalra kinyújtva (T-alakban).\n• Csavarás: Húzd fel a jobb térded, majd kilégzésre engedd le bal oldalra a talaj felé.\n• Tekintet: Fordítsd a fejed ellenkező irányba, jobbra.",
+  "description_switch": "Válts oldalt...",
+  "subtitle": "",
+  "image": "images/gerinccsavaras-labak.webp",
+  "duration_sec": 30,
+  "quick_rest_default": false,
+  "mirror": true,
+  "sided": true,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "also-hat",
+    "felso-hat",
+    "nyak"
+  ],
+  "source_reference": ""
+}
