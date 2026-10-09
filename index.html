@@ -1164,6 +1164,7 @@ window.addEventListener('unhandledrejection', function(e){
 
   const clipBuffers = {};
   const clipLoading = {};
+  const clipFailed = {};
   let decodeCtx = null;
   let currentClip = null;
 
@@ -1193,19 +1194,35 @@ window.addEventListener('unhandledrejection', function(e){
       .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
       .then(decodeBuffer)
       .then(buf => { clipBuffers[slug] = buf; return buf; })
-      .catch(e => { dbg('hangfájl betöltése sikertelen (' + slug + '): ' + e); delete clipLoading[slug]; return null; });
+      .catch(e => { dbg('hangfájl betöltése sikertelen (' + slug + '): ' + e); clipFailed[slug] = true; delete clipLoading[slug]; return null; });
     clipLoading[slug] = p;
     return p;
+  }
+
+  // Az aktuális edzés összes bemondott neve.
+  function workoutSpokenNames(){
+    const names = new Set();
+    const add = (arr) => (arr || []).forEach(it => { if (it && it.name) names.add(it.name); });
+    add(WARMUP); add(COOLDOWN); add(ROUND_REST);
+    for (let r = 1; r <= ROUNDS_MAX; r++) add(mainForRound ? mainForRound(r) : MAIN);
+    return names;
   }
 
   // Az aktuális edzés összes bemondott nevéhez betölti a hangfájlt (ha van).
   function preloadClips(){
     if (!AUDIO_CLIPS.size) return;
-    const names = new Set();
-    const add = (arr) => (arr || []).forEach(it => { if (it && it.name) names.add(it.name); });
-    add(WARMUP); add(COOLDOWN); add(ROUND_REST);
-    for (let r = 1; r <= ROUNDS_MAX; r++) add(mainForRound ? mainForRound(r) : MAIN);
-    names.forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
+    workoutSpokenNames().forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
+  }
+
+  // Kell-e az élő felolvasás tartaléknak (hiányzó vagy nem dekódolható hangfájl)?
+  // Ha nem, a felolvasó motort hozzá sem érjük: az iOS-en saját hangmunkamenetet
+  // kér, ami kiüti a háttérben szóló podcastot és az oldal saját hangját is.
+  function speechFallbackNeeded(){
+    for (const n of workoutSpokenNames()){
+      const slug = audioSlug(n);
+      if (!AUDIO_CLIPS.has(slug) || clipFailed[slug]) return true;
+    }
+    return false;
   }
 
   function stopClip(){
@@ -1595,6 +1612,7 @@ window.addEventListener('unhandledrejection', function(e){
   // iOS only lets a media element play later if its first play() happened
   // inside a user gesture. Priming the whole pool on Play keeps the fallback
   // beeps usable once Web Audio dies mid-workout.
+  let beepPoolUnlocked = false;
   function unlockBeepPool(){
     initBeepPool();
     ['mid','high'].forEach(tone => {
@@ -1617,8 +1635,12 @@ window.addEventListener('unhandledrejection', function(e){
     if (queue[qIndex].kind === 'done') return;
     applyAudioSession();
     try{ ensureAudio(true); } catch(e){}
-    try{ unlockSpeech(); } catch(e){}
-    try{ unlockBeepPool(); } catch(e){}
+    const needSpeech = speechFallbackNeeded();
+    if (needSpeech){ try{ unlockSpeech(); } catch(e){} }
+    // A hangelemes sípolás-tartalékot elég egyszer "feloldani" oldalbetöltésenként.
+    if (!beepPoolUnlocked){ beepPoolUnlocked = true; try{ unlockBeepPool(); } catch(e){} }
+    dbg('Play: audioCtx=' + (audioCtx ? audioCtx.state : '-') + ' felolvasás-feloldás=' + (needSpeech ? 'igen' : 'nem')
+      + ' audioSession=' + ((navigator.audioSession && (navigator.audioSession.type + '/' + navigator.audioSession.state)) || 'nincs'));
     running = true;
     endTime = Date.now() + remainingMs;
     startTick();
@@ -1634,8 +1656,20 @@ window.addEventListener('unhandledrejection', function(e){
     render();
   }
 
+  // Kézi szünetnél az AudioContext-et is felfüggesztjük, hogy az oldal ne tartsa
+  // lefoglalva a hangmunkamenetet (a háttérben szóló podcast ne akadjon el tőle);
+  // a következő Play újraéleszti.
+  function releaseAudioWhilePaused(){
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    try{
+      const p = audioCtx.suspend();
+      if (p && p.catch) p.catch(() => {});
+      dbg('szünet: audioCtx felfüggesztve');
+    } catch(e){}
+  }
+
   btnPlay.addEventListener('click', () => {
-    if (running) pause(); else play();
+    if (running){ pause(); releaseAudioWhilePaused(); } else play();
   });
 
   btnFwd.addEventListener('click', () => {
