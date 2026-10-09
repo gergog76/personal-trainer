@@ -18,6 +18,7 @@ data/
   programs/_order.json        ["<program-id>", …] — the display order of programs
   programs/<id>.json          one program; filename is the id
   trainings.json              GENERATED at deploy time, gitignored — do not edit or commit
+audio/<slug>.m4a              pre-recorded spoken exercise names (see "Spoken names" below)
 ```
 
 `lib/data-schema.mjs` is the single place that knows how to split the dataset into files
@@ -95,6 +96,24 @@ programs: [
   `slugify` in `lib/data-schema.mjs`, the one remaining copy.
 - `sided` exercises get expanded into two timer steps (left/right) at runtime by
   `index.html`'s `expandBlockItem`.
+
+## Spoken names (`audio/`)
+
+The timer announces the next exercise during rests. Live `speechSynthesis` does not work
+reliably on iOS 27 (it takes over the audio session and mutes/interrupts the page's own
+audio), so the name is played from a pre-recorded clip through the same `AudioContext` as
+the beeps, which also lets it mix with a podcast playing in the background. Where a clip
+is missing, the app falls back to live speech.
+
+- `audio/<slug>.m4a`, where `<slug>` = `audioSlug(spoken text)` (same as `slugify`). The
+  spoken text is exactly the step name the timer shows: `name`, or `name – <side label>` for
+  `sided` exercises (`spokenNames` in `lib/data-schema.mjs`).
+- Generate/refresh on a Mac (needs the Hungarian voice installed): `node scripts/generate-audio.mjs`
+  (only missing files; `--force`, `--dry-run`, `--voice "…"`, `--list-voices`). Then run the
+  build and commit `audio/`.
+- `scripts/build-data.mjs` lists the existing clips into `trainings.json` (`audio: [slug, …]`)
+  and warns about spoken names without a clip. `index.html` preloads the current workout's
+  clips on load (decoded with an `OfflineAudioContext`, so no user gesture is needed).
 
 ## `index.html` — the timer app
 

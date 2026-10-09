@@ -518,6 +518,8 @@ window.addEventListener('unhandledrejection', function(e){
   let roundsByWorkout = {};
   let currentWorkoutId = 'core-alap';
   let WARMUP = [], MAIN = [], COOLDOWN = [], ROUND_REST = [];
+  // Azon bemondott szövegek slugjai, amikhez van előre felvett hangfájl (audio/).
+  let AUDIO_CLIPS = new Set();
   // A fő blokk körönként váltakozó gyakorlatait feloldó függvény
   // (workout-váltáskor és adatbetöltéskor frissül). Lásd makeMainResolver.
   let mainForRound = null;
@@ -626,6 +628,8 @@ window.addEventListener('unhandledrejection', function(e){
       WORKOUT_ORDER.push({ id: p.id, name: p.name });
       roundsByWorkout[p.id] = p.rounds;
     });
+
+    AUDIO_CLIPS = new Set(data.audio || []);
 
     ROUNDS_MIN = c.rounds_min;
     ROUNDS_MAX = c.rounds_max;
@@ -1011,7 +1015,7 @@ window.addEventListener('unhandledrejection', function(e){
   let audioStuckSince = 0;
 
   function tryResume(){
-    if (!audioCtx) return;
+    if (!audioCtx || speechActive) return;
     try{
       const p = audioCtx.resume();
       if (p && p.catch) p.catch(() => {});
@@ -1037,6 +1041,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (!Ctx) return false;
     try{ audioCtx = new Ctx(); } catch(e){ audioCtx = null; return false; }
     audioStuckSince = 0;
+    audioCtx.onstatechange = () => dbg('audioCtx: ' + audioCtx.state);
     // Resume and prime immediately - a fresh context starts out suspended.
     tryResume();
     primeAudio();
@@ -1046,6 +1051,7 @@ window.addEventListener('unhandledrejection', function(e){
   // `inGesture` must be true only when called synchronously from a real user
   // interaction; iOS refuses to revive audio at any other time.
   function ensureAudio(inGesture){
+    if (speechActive) return;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     if (!audioCtx || audioCtx.state === 'closed'){
@@ -1073,11 +1079,41 @@ window.addEventListener('unhandledrejection', function(e){
     return !!audioCtx && audioCtx.state === 'running';
   }
 
+  // Hibakereső sáv: csak akkor jelenik meg, ha az URL-ben van "?debug". Az
+  // iPhone-on nincs konzol, ez mutatja, hová vész el a hangbemondás.
+  const DEBUG = /[?&]debug(?:[=&]|$)/.test(location.search);
+  // A néma háttérhang/videó trükk (képernyő-zár és hangmunkamenet életben
+  // tartása) iOS 27-en ütközik a beszédszintézissel: a bemondás indulásakor az
+  // iOS leállítja, és a beszéd elhalkul vagy meg sem szólal. Ezért csak akkor
+  // használjuk, ha nincs Wake Lock API, vagy ha az URL-ben "?media" van.
+  const USE_MEDIA = /[?&]media(?:[=&]|$)/.test(location.search) || !('wakeLock' in navigator);
+  // Igaz a bemondás kérésétől a végéig: ezalatt semmi nem nyúlhat a hang-
+  // munkamenethez (média újraindítás, AudioContext újraélesztés).
+  let speechActive = false;
+  let speechActiveTimer = null;
+  const dbgLines = [];
+  let dbgEl = null;
+  if (DEBUG){
+    dbgEl = document.createElement('div');
+    dbgEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:998;background:rgba(0,0,0,.8);'
+      + 'color:#9f9;font:10px/1.35 ui-monospace,Menlo,monospace;padding:4px 6px;white-space:pre-wrap;'
+      + 'pointer-events:none;max-height:35vh;overflow:hidden;';
+    document.body.appendChild(dbgEl);
+  }
+  function dbg(msg){
+    if (!DEBUG) return;
+    const t = new Date().toTimeString().slice(0, 8);
+    dbgLines.push(t + ' ' + msg);
+    if (dbgLines.length > 10) dbgLines.shift();
+    dbgEl.textContent = dbgLines.join('\n');
+  }
+  dbg('háttérhang/videó: ' + (USE_MEDIA ? 'BE' : 'KI (Wake Lock)'));
+
   function pickHuVoice(){
     if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return;
-    huVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('hu')) || null;
+    huVoice = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('hu')) || null;
   }
   if ('speechSynthesis' in window){
     pickHuVoice();
@@ -1099,24 +1135,172 @@ window.addEventListener('unhandledrejection', function(e){
     return REST_KINDS.includes(phase.kind);
   }
 
+  // ---- Előre felvett hangfájlok (audio/<slug>.m4a) ------------------------
+  // iOS-en az élő felolvasás (speechSynthesis) rendszerhang, ami átveszi a
+  // hangmunkamenetet, és kiüti az oldal többi hangját. A gyakorlat nevét ezért
+  // inkább hangfájlból játsszuk le ugyanazon az AudioContext-en, mint a
+  // sípolást: így a kettő (és a háttérben szóló podcast is) keveredik. A fájlokat
+  // a scripts/generate-audio.mjs készíti; ahol nincs, élő felolvasásra esünk vissza.
+  // Ugyanaz a slugify, mint a lib/data-schema.mjs-ben.
+  const audioSlug = (t) => (t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase();
+
+  const clipBuffers = {};
+  const clipLoading = {};
+  let decodeCtx = null;
+  let currentClip = null;
+
+  // A dekódoláshoz külön, offline kontextust használunk: ehhez nem kell
+  // felhasználói gesztus, így a hangfájlok már az oldal betöltésekor készen
+  // állnak, nem csak az első Play után. Az AudioBuffer bármely kontextusban lejátszható.
+  function getDecodeCtx(){
+    if (decodeCtx) return decodeCtx;
+    const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (Off){ try{ decodeCtx = new Off(1, 1, 44100); } catch(e){ decodeCtx = null; } }
+    return decodeCtx || audioCtx;
+  }
+
+  function decodeBuffer(arrayBuf){
+    return new Promise((resolve, reject) => {
+      const ctx = getDecodeCtx();
+      if (!ctx){ reject(new Error('nincs AudioContext a dekódoláshoz')); return; }
+      const r = ctx.decodeAudioData(arrayBuf, resolve, reject);
+      if (r && r.catch) r.catch(reject);
+    });
+  }
+
+  function loadClip(slug){
+    if (clipBuffers[slug]) return Promise.resolve(clipBuffers[slug]);
+    if (clipLoading[slug]) return clipLoading[slug];
+    const p = fetch('audio/' + slug + '.m4a')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(decodeBuffer)
+      .then(buf => { clipBuffers[slug] = buf; return buf; })
+      .catch(e => { dbg('hangfájl betöltése sikertelen (' + slug + '): ' + e); delete clipLoading[slug]; return null; });
+    clipLoading[slug] = p;
+    return p;
+  }
+
+  // Az aktuális edzés összes bemondott nevéhez betölti a hangfájlt (ha van).
+  function preloadClips(){
+    if (!AUDIO_CLIPS.size) return;
+    const names = new Set();
+    const add = (arr) => (arr || []).forEach(it => { if (it && it.name) names.add(it.name); });
+    add(WARMUP); add(COOLDOWN); add(ROUND_REST);
+    for (let r = 1; r <= ROUNDS_MAX; r++) add(mainForRound ? mainForRound(r) : MAIN);
+    names.forEach(n => { const slug = audioSlug(n); if (AUDIO_CLIPS.has(slug)) loadClip(slug); });
+  }
+
+  function stopClip(){
+    if (!currentClip) return;
+    try{ currentClip.stop(); } catch(e){}
+    currentClip = null;
+  }
+
+  function startClip(slug){
+    const buf = clipBuffers[slug];
+    if (!buf || !audioCtx || audioCtx.state !== 'running') return false;
+    try{
+      stopClip();
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const gain = audioCtx.createGain();
+      gain.gain.value = 1;
+      src.connect(gain).connect(audioCtx.destination);
+      src.onended = () => { if (currentClip === src) currentClip = null; dbg('hangfájl vége: ' + slug); };
+      src.start();
+      currentClip = src;
+      dbg('hangfájl indul: ' + slug + ' (' + buf.duration.toFixed(1) + ' mp)');
+      return true;
+    } catch(e){
+      dbg('hangfájl lejátszási hiba: ' + e);
+      return false;
+    }
+  }
+
+  // Lejátssza a hangfájlt; ha az AudioContext még nem fut (pl. épp most indult
+  // az első Play után), megvárja az újraindulását, de legfeljebb 600 ms-ig.
+  function playClipWhenReady(slug){
+    return new Promise(resolve => {
+      if (!audioCtx || audioCtx.state === 'closed'){ resolve(false); return; }
+      if (audioCtx.state === 'running'){ resolve(startClip(slug)); return; }
+      let settled = false;
+      const timer = setTimeout(() => { if (!settled){ settled = true; resolve(false); } }, 600);
+      try{
+        audioCtx.resume().then(() => {
+          if (settled) return;
+          settled = true; clearTimeout(timer);
+          resolve(startClip(slug));
+        }).catch(() => {});
+      } catch(e){ settled = true; clearTimeout(timer); resolve(false); }
+    });
+  }
+
   function speakNextExercise(phase){
     if (muted) return;
-    if (!('speechSynthesis' in window)) return;
     const ex = getCardExercise(phase);
     if (!ex || !ex.name) return;
+    const slug = audioSlug(ex.name);
+    if (AUDIO_CLIPS.has(slug)){
+      if (clipBuffers[slug]){
+        playClipWhenReady(slug).then(ok => {
+          if (!ok){ dbg('hangfájl nem játszható le, élő felolvasás: ' + ex.name); speakWithVoice(ex); }
+        });
+        return;
+      }
+      dbg('hangfájl még nem töltődött be (' + slug + '), élő felolvasás');
+    }
+    speakWithVoice(ex);
+  }
+
+  // Élő felolvasás (tartalék, ha nincs hangfájl).
+  function speakWithVoice(ex){
+    if (muted) return;
+    if (!('speechSynthesis' in window)){ dbg('speech: nincs speechSynthesis'); return; }
     const synth = window.speechSynthesis;
+    // A hanglista iOS-en késve vagy frissítés után üresen/újrarendezve
+    // érkezhet, ezért minden bemondás előtt újra megkeressük a magyar hangot.
+    pickHuVoice();
     // iOS can leave the utterance queue paused or stuck behind an item that
-    // never finishes; clearing and resuming first stops announcements from
-    // piling up and arriving seconds late.
-    try{ synth.cancel(); synth.resume(); } catch(e){}
+    // never finishes; clearing and resuming stops announcements from piling
+    // up and arriving seconds late. Csak akkor törlünk, ha tényleg van mit:
+    // a felesleges cancel() közvetlenül a speak() előtt újabb iOS-eken
+    // elnyelheti a bemondást.
+    try{
+      if (synth.speaking || synth.pending || synth.paused) synth.cancel();
+      synth.resume();
+    } catch(e){ dbg('cancel/resume hiba: ' + e); }
     const utter = new SpeechSynthesisUtterance(ex.name);
-    if (huVoice) utter.voice = huVoice;
-    utter.lang = (huVoice && huVoice.lang) || 'hu-HU';
+    // Újabb Safarik null "voice" mellett azonnal, némán leállnak, ezért mindig
+    // explicit hangot adunk: a magyart, ennek hiányában az alapértelmezettet.
+    const voice = huVoice || (function(){
+      const all = synth.getVoices();
+      return all.find(v => v.default) || all[0] || null;
+    })();
+    if (voice) utter.voice = voice;
+    utter.lang = (voice && voice.lang) || 'hu-HU';
     utter.rate = 1;
     utter.pitch = 1;
-    // A speak() issued in the same turn as cancel() is silently dropped on
-    // some iOS versions, so hand it over on the next event-loop turn.
-    setTimeout(() => { try{ synth.speak(utter); } catch(e){} }, 0);
+    utter.volume = 1;
+    let started = false;
+    utter.onstart = () => { started = true; dbg('start: ' + ex.name); };
+    utter.onend = () => { dbg('end: ' + ex.name); resumeMediaAfterSpeech(); };
+    utter.onerror = (e) => { dbg('HIBA: ' + (e && e.error) + ' (' + ex.name + ')'); resumeMediaAfterSpeech(); };
+    dbg('speak "' + ex.name + '" hang=' + (voice ? voice.name + ' ' + voice.lang + (huVoice ? '' : ' (nem magyar!)') : 'NINCS')
+      + ' hangok=' + synth.getVoices().length + ' audioCtx=' + (audioCtx ? audioCtx.state : '-')
+      + ' audioSession=' + ((navigator.audioSession && navigator.audioSession.type) || 'nincs'));
+    // Bemondás közben nem nyúlunk a hangmunkamenethez; a végén (onend/onerror)
+    // adjuk vissza.
+    pauseMediaForSpeech();
+    setTimeout(() => {
+      try{ synth.speak(utter); } catch(e){ dbg('speak hiba: ' + e); resumeMediaAfterSpeech(); }
+    }, 0);
+    if (DEBUG){
+      setTimeout(() => {
+        if (!started) dbg('NEM indult el 1.5 mp után: speaking=' + synth.speaking
+          + ' pending=' + synth.pending + ' paused=' + synth.paused);
+      }, 1500);
+    }
   }
 
   // Announces the upcoming exercise as soon as a rest phase begins.
@@ -1147,7 +1331,16 @@ window.addEventListener('unhandledrejection', function(e){
   const keepAwakeVideo = document.getElementById('keepAwakeVideo');
   const keepAliveAudio = document.getElementById('keepAliveAudio');
 
+  if (DEBUG){
+    [['audio', keepAliveAudio], ['video', keepAwakeVideo]].forEach(([n, m]) => {
+      if (!m) return;
+      m.addEventListener('play', () => dbg(n + ' play'));
+      m.addEventListener('pause', () => dbg(n + ' PAUSE'));
+    });
+  }
+
   function startKeepAwakeMedia(){
+    if (!USE_MEDIA || speechActive) return;
     // A play() a specifikáció szerint mindig Promise-t ad vissza, de néhány
     // motorban (pl. iOS-en bizonyos háttérből visszatérő állapotban) szinkron
     // hibát is dobhat - ez nélkül a próbálkozás megszakítaná a teljes play()
@@ -1166,6 +1359,37 @@ window.addEventListener('unhandledrejection', function(e){
         keepAliveAudio.play().catch(() => { /* retried on the next tick */ });
       }
     } catch(e){ /* lásd fenti megjegyzés */ }
+  }
+  // A bemondás idejére lezárjuk a hangmunkamenetet (lásd speechActive): a
+  // háttérhang nem indulhat újra, az AudioContext nem éleszthető újra, és
+  // magát az AudioContext-et is felfüggesztjük. iOS-en a futó Web Audio a
+  // beszéd közben "interrupted" állapotba kerül, és ilyenkor a bemondás nem
+  // hallatszik; felfüggesztve a beszéd rendesen megszólal. A sípolás ez idő
+  // alatt a hangelemes pótmegoldásra vált, a bemondás végén (onend/onerror)
+  // éleszthető újra az AudioContext. A háttérhang szüneteltetése NEM
+  // megoldás (az iOS elengedi a munkamenetet, és a beszéd hang nélkül ér véget).
+  function pauseMediaForSpeech(){
+    speechActive = true;
+    // Biztonsági háló: ha az onend/onerror sosem érkezik meg, 8 mp után
+    // mindenképp visszaadjuk a hangmunkamenetet.
+    clearTimeout(speechActiveTimer);
+    speechActiveTimer = setTimeout(resumeMediaAfterSpeech, 8000);
+    // Feltétel nélkül, nem csak "running" állapotban: egy épp induló
+    // AudioContext resume()-ja még függőben lehet, a suspend() a sorban utána
+    // fut le, így a végállapot felfüggesztett.
+    try{
+      if (audioCtx && audioCtx.state !== 'closed'){
+        const p = audioCtx.suspend();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch(e){}
+  }
+  function resumeMediaAfterSpeech(){
+    clearTimeout(speechActiveTimer);
+    speechActive = false;
+    if (!running) return;
+    tryResume();
+    startKeepAwakeMedia();
   }
   function stopKeepAwakeMedia(){
     if (keepAwakeVideo) keepAwakeVideo.pause();
@@ -1197,6 +1421,11 @@ window.addEventListener('unhandledrejection', function(e){
     if (!running) return;
     const now = Date.now();
     if (now - lastKeepAwakeCheck < 5000) return;
+    // Bemondás közben nem nyúlunk a médiaelemekhez: ha az iOS a beszéd
+    // miatt szüneteltette a néma háttérhangot, az újraindítás (play())
+    // visszavehetné az audio-munkamenetet, és elhalkítaná/megszakítaná a
+    // bemondást. A következő tick újra próbálja.
+    if (speechActive || ('speechSynthesis' in window && window.speechSynthesis.speaking)) return;
     lastKeepAwakeCheck = now;
     ensureAudio();
     requestWakeLock();
@@ -1240,6 +1469,8 @@ window.addEventListener('unhandledrejection', function(e){
   }
   let beepCursor = 0;
   function elementBeep(tone){
+    // Bemondás közben a hangelemes sípolás elnyomná a beszédet.
+    if (speechActive) return;
     initBeepPool();
     const pool = beepPool[tone];
     if (!pool.length) return;
@@ -1256,7 +1487,7 @@ window.addEventListener('unhandledrejection', function(e){
   // Schedules a beep through Web Audio when it is healthy, otherwise falls
   // back to a media element. `delay` is seconds from now.
   function beep(freq, dur, delay){
-    if (muted) return;
+    if (muted || speechActive) return;
     if (audioReady()){
       try{
         const when = audioCtx.currentTime + Math.max(0.01, delay);
@@ -1379,6 +1610,7 @@ window.addEventListener('unhandledrejection', function(e){
   }
   function pause(){
     running = false;
+    stopClip();
     stopTick();
     releaseWakeLock();
     render();
@@ -1564,6 +1796,7 @@ window.addEventListener('unhandledrejection', function(e){
     exCard.classList.remove('open');
 
     buildDots();
+    preloadClips();
     workoutItems.forEach(el => el.classList.toggle('active', el.dataset.id === id));
     renderRoundsUI();
     render();
@@ -1669,6 +1902,7 @@ window.addEventListener('unhandledrejection', function(e){
 
   renderRoundsUI();
   render();
+  preloadClips();
 })();
 </script>
 </body>
