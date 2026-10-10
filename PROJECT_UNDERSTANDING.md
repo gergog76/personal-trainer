@@ -43,9 +43,14 @@ running on a PR preview (can save) or production (read-only), and which commit i
 ## Editing workflow
 
 The editor (`szerkeszto.html`) only allows saving when served from a **`dev` → `main` PR
-deploy preview** (or a `dev` branch deploy, if one is ever enabled). Production is read-only.
+deploy preview** or from the **`dev` branch deploy** (`https://dev--<site>.netlify.app/szerkeszto`,
+Netlify → Branches and deploy contexts → Branch deploys → add `dev`). Production is read-only.
+The branch deploy lets you edit without an open PR (a PR cannot exist while `dev` and `main`
+are identical). A branch deploy is only built by a **new push** to `dev` after it is enabled, and
+`EDIT_TOKEN` / `GITHUB_TOKEN` must be scoped to include *Branch deploys* too. Branch deploys and
+deploy previews are not metered by Netlify credits; only production deploys (merges to `main`) are.
 
-1. Open (or keep open) a PR from `dev` to `main`.
+1. Open the `dev` branch deploy, or (alternatively) keep a PR from `dev` to `main` open.
 2. Edit on the PR's deploy preview URL. **Save** POSTs the whole dataset to `/api/save-data`.
 3. `save-data.mjs` diffs it against the current `dev` tree and pushes ONE atomic commit to
    `dev` via the GitHub Git Data API (blob → tree → commit → ref). Changed JSON files and
