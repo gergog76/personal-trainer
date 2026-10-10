@@ -28,6 +28,8 @@ import {
   AUDIO_EXT,
   audioSlug,
   spokenNames,
+  spokenMessageTexts,
+  MESSAGES_FILE,
 } from '../lib/data-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,18 +58,60 @@ function collectTexts() {
       bySlug.set(slug, text);
     }
   }
+  const messagesPath = path.join(REPO_ROOT, MESSAGES_FILE);
+  if (fs.existsSync(messagesPath)) {
+    for (const text of spokenMessageTexts(JSON.parse(fs.readFileSync(messagesPath, 'utf8')))) {
+      const slug = audioSlug(text);
+      if (!slug) continue;
+      const prev = bySlug.get(slug);
+      if (prev && prev !== text) {
+        console.error(`✗ Fájlnév-ütközés: "${prev}" és "${text}" ugyanarra a névre (${slug}) képződik le.`);
+        process.exit(1);
+      }
+      bySlug.set(slug, text);
+    }
+  }
   return bySlug;
 }
 
-// A `say -v '?'` kimenetének sorai: "Tünde   hu_HU    # Szia! ..."
-function hungarianVoices() {
-  const out = execFileSync('say', ['-v', '?'], { encoding: 'utf8' });
+// Az audio/ mappában lévő, de már egyetlen szöveghez sem tartozó fájlok (pl. átírt
+// üzenet régi hangfájlja). Nem töröljük, csak jelezzük.
+function unusedAudio(texts) {
+  const dir = path.join(REPO_ROOT, AUDIO_DIR);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(AUDIO_EXT) && !texts.has(f.slice(0, -AUDIO_EXT.length)))
+    .sort();
+}
+
+// A `say -v '?'` kimenetének sorai: "Tünde   hu_HU    # Szia! ..." - a nyelvkód
+// macOS-verziótól függően hu_HU vagy hu-HU lehet, a megjegyzés pedig hiányozhat.
+export function parseSayVoices(output) {
   const voices = [];
-  for (const line of out.split('\n')) {
-    const m = line.match(/^(.+?)\s{2,}([a-z]{2}_[A-Z]{2})\s+#/);
-    if (m && m[2] === 'hu_HU') voices.push(m[1].trim());
+  for (const line of output.split('\n')) {
+    const m = line.match(/^(.+?)\s+([A-Za-z]{2,3}[_-][A-Za-z0-9]{2,4})\b/);
+    if (m) voices.push({ name: m[1].trim().normalize('NFC'), locale: m[2].replace('-', '_') });
   }
   return voices;
+}
+
+// Magyar hang: a nyelvkód alapján, vagy (ha a lista másképp néz ki) a név alapján.
+export function pickHungarian(voices) {
+  return voices
+    .filter((v) => /^hu(_|$)/i.test(v.locale) || /^t[uü]nde\b/i.test(v.name))
+    .map((v) => v.name);
+}
+
+function hungarianVoices() {
+  const out = execFileSync('say', ['-v', '?'], { encoding: 'utf8' });
+  const found = pickHungarian(parseSayVoices(out));
+  if (!found.length) {
+    // Segítség a hibakereséshez: mutassuk, mit adott a `say`.
+    const hints = out.split('\n').filter((l) => /hu|t[uü]nde|hung/i.test(l)).slice(0, 5);
+    if (hints.length) console.error('A `say -v ?` ide illő sorai:\n' + hints.map((l) => '  ' + l).join('\n'));
+  }
+  return found;
 }
 
 function pickVoice(voices) {
@@ -87,6 +131,11 @@ function main() {
   );
 
   console.log(`${texts.size} bemondott szöveg, ebből ${todo.length} hiányzik az ${AUDIO_DIR}/ mappából.`);
+  const unused = unusedAudio(texts);
+  if (unused.length) {
+    console.log(`Megjegyzés: ${unused.length} fájl az ${AUDIO_DIR}/ mappában már egy szöveghez sem tartozik (törölhető):`);
+    for (const f of unused) console.log(`  ${AUDIO_DIR}/${f}`);
+  }
 
   if (flag('--dry-run')) {
     for (const [slug, text] of todo) console.log(`  ${slug}${AUDIO_EXT}  <-  "${text}"`);
@@ -108,8 +157,12 @@ function main() {
 
   const voice = pickVoice(voices);
   if (!voice) {
-    console.error('✗ Nincs telepített magyar hang. Töltsd le: Rendszerbeállítások → Kisegítő lehetőségek →');
-    console.error('  Felolvasott tartalom → Rendszerhang → Hangok kezelése… → Magyar.');
+    console.error('✗ Nincs telepített magyar hang. Töltsd le:');
+    console.error('  (magyar macOS)  Rendszerbeállítások → Kisegítő lehetőségek → Felolvasott tartalom →');
+    console.error('                  Rendszerhang → Hangok kezelése… → Magyar → Tünde');
+    console.error('  (angol macOS)   System Settings → Accessibility → Spoken Content →');
+    console.error('                  System Voice → Manage Voices… → Hungarian → Tünde');
+    console.error('  Ellenőrzés: say -v \'?\' | grep hu_HU');
     process.exit(1);
   }
   console.log(`Hang: ${voice}` + (voices.length > 1 ? `  (magyar hangok: ${voices.join(', ')})` : ''));
@@ -141,4 +194,4 @@ function main() {
   console.log('Következő lépés: node scripts/build-data.mjs, majd az audio/ mappa commitolása.');
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

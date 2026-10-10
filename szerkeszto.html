@@ -483,6 +483,16 @@ async function saveData(){
 
 /* ---------- Bal oszlop: tréning-lista ---------- */
 
+// A sor "gyors pihenője": az adott gyakorlat ELŐTTI pihenő rövid (quick_rest_sec)
+// vagy normál (rest_sec). A program-elem "quickRest" mezője felülírja a gyakorlat
+// "quick_rest_default" alapértékét. Oldalas (bal/jobb) gyakorlatnál az alapérték
+// nem érvényes az első oldal előtti pihenőre (csak a program-elem kifejezett
+// beállítása), a két oldal közti pihenő külön, alapból gyors.
+function quickRestDefault(ex){ return !!(ex && !ex.sided && ex.quick_rest_default); }
+function effectiveQuickRest(item, ex){
+  return item.quickRest != null ? !!item.quickRest : quickRestDefault(ex);
+}
+
 function programStats(p){
   let count = 0;
   PROGRAM_BLOCK_KEYS.forEach(k => (p.blocks[k]||[]).forEach(() => count++));
@@ -596,7 +606,9 @@ function renderLeft(){
       const row = el('div','block-item');
       row.appendChild(el('span','bi-name', ex ? ex.name : '(hiányzó: ' + item.exerciseId + ')'));
       if (ex && ex.sided) row.appendChild(el('span','bi-badge','bal/jobb'));
-      if (item.quickRest) row.appendChild(el('span','bi-badge','gyors pihenő'));
+      const quick = effectiveQuickRest(item, ex);
+      if (quick) row.appendChild(el('span','bi-badge variant','⚡ gyors pihenő'));
+      else if (item.quickRest === false && quickRestDefault(ex)) row.appendChild(el('span','bi-badge','normál pihenő'));
       if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns'));
       const up = el('button','','↑'); up.title='Feljebb';
       up.onclick = () => { if (idx>0){ [items[idx-1],items[idx]]=[items[idx],items[idx-1]]; setDirty(true); renderLeft(); } };
@@ -607,6 +619,23 @@ function renderLeft(){
       const rm = el('button','','✕'); rm.title='Eltávolítás a tréningből';
       rm.onclick = () => { items.splice(idx,1); setDirty(true); renderLeft(); renderMid(); };
       row.appendChild(up); row.appendChild(down);
+      // Az első bemelegítő/levezető elem előtt nincs pihenő (ott a felkészülés /
+      // átvezetés fut), ezért ott a kapcsoló értelmetlen lenne.
+      if (!((blockKey === 'warmup' || blockKey === 'cooldown') && idx === 0)){
+        const qB = el('button', quick ? 'on' : '', '⚡');
+        const c = data.constants || {};
+        qB.title = (quick
+          ? `Gyors pihenő (${c.quick_rest_sec ?? 5} mp) ez ELŐTT a gyakorlat előtt – kattints a normálra (${c.rest_sec ?? 10} mp)`
+          : `Normál pihenő (${c.rest_sec ?? 10} mp) ez előtt a gyakorlat előtt – kattints a gyorsra (${c.quick_rest_sec ?? 5} mp)`)
+          + (blockKey === 'main' && idx === 0 ? '. A kör első gyakorlatánál csak a körök közti pihenő-gyakorlatok után számít.' : '')
+          + (ex && ex.sided ? '. A bal és jobb oldal közti pihenő külön, alapból gyors.' : '');
+        qB.onclick = () => {
+          const next = !quick;
+          if (next === quickRestDefault(ex)) delete item.quickRest; else item.quickRest = next;
+          setDirty(true); renderLeft();
+        };
+        row.appendChild(qB);
+      }
       if (blockKey === 'main'){
         const varB = el('button', variantTarget === item ? 'on' : '', '🔁');
         varB.title = 'Körönként váltakozó gyakorlat: variáns hozzáadása a könyvtárból';

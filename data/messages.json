@@ -1,0 +1,9 @@
+{
+  "start": [
+    "Szia! Kezdődjön a mai edzés.",
+    "Ne felejtsd el elindítani a torna rögzítését a pulzusmérő órádon."
+  ],
+  "end": [
+    "Szép munka, az edzésnek vége! Ne felejtsd el leállítani a rögzítést az órádon."
+  ]
+}

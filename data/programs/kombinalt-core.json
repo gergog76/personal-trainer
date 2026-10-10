@@ -1,5 +1,5 @@
 {
-  "name": "Kombinált, nyak súlyos",
+  "name": "Core + nyak",
   "rounds": 2,
   "blocks": {
     "warmup": [
@@ -11,14 +11,16 @@
         "quickRest": true
       },
       {
-        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen"
+        "exerciseId": "csipokorzes-oramutato-jarasaval-megegyezoen",
+        "quickRest": true
       },
       {
         "exerciseId": "csipokorzes-oramutato-jarasaval-ellentetesen",
         "quickRest": true
       },
       {
-        "exerciseId": "csipohajlito-bemozgatas"
+        "exerciseId": "csipohajlito-bemozgatas",
+        "quickRest": true
       },
       {
         "exerciseId": "macska-teve-mozgas"
@@ -26,10 +28,10 @@
     ],
     "main": [
       {
-        "exerciseId": "bird-dog"
-      },
-      {
-        "exerciseId": "dead-bug"
+        "exerciseId": "bird-dog",
+        "variants": [
+          "dead-bug"
+        ]
       },
       {
         "exerciseId": "csipoemeles-labdaval",
@@ -38,30 +40,30 @@
         ]
       },
       {
-        "exerciseId": "allbehuzas-labdaval"
+        "exerciseId": "allbehuzas-labdaval",
+        "variants": [
+          "nyakforgatas-labdanyomassal"
+        ]
       },
       {
-        "exerciseId": "nyakforgatas-labdanyomassal",
-        "variants": [
-          "fektetett-nyolcas-labdaval"
-        ]
+        "exerciseId": "fektetett-nyolcas-labdaval"
       },
       {
         "exerciseId": "oldalso-plank",
         "sided": true
       },
       {
-        "exerciseId": "kulso-forgatas-sulyzoval",
-        "sided": true
+        "exerciseId": "gerinccsavaras-labak"
       },
       {
-        "exerciseId": "fekvotamasz"
+        "exerciseId": "fekvotamasz",
+        "variants": [
+          "hegymaszo"
+        ]
       },
       {
-        "exerciseId": "plank"
-      },
-      {
-        "exerciseId": "hegymaszo"
+        "exerciseId": "plank",
+        "quickRest": true
       }
     ],
     "cooldown": [
@@ -72,6 +74,9 @@
       {
         "exerciseId": "csipohajlito-nyujtas",
         "sided": true
+      },
+      {
+        "exerciseId": "hanyatt-fekvo-4-es-nyujtas"
       },
       {
         "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"

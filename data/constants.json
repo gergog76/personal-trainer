@@ -3,7 +3,7 @@
   "rest_sec": 10,
   "quick_rest_sec": 5,
   "round_rest_sec": 60,
-  "prep_sec": 10,
+  "prep_sec": 15,
   "block_transition_sec": 10,
   "rounds_min": 1,
   "rounds_max": 5

@@ -1,0 +1,22 @@
+{
+  "name": "Hanyatt fekvő „4-es” nyújtás",
+  "category": "main",
+  "equipment": [],
+  "description": "1. Feküdj a hátadra behajlított térdekkel, talpakkal a talajon.\n2. Tedd a jobb bokádat a bal combodra (közvetlenül a térded fölé).\n3. Kulcsold össze az ujjaidat a bal combod mögött, és óvatosan húzd a lábaidat a mellkasod felé, amíg kellemes nyújtást nem érzel a jobb farizmodban.",
+  "description_switch": "Válts lábat...",
+  "subtitle": "",
+  "image": "images/hanyatt-fekvo-4-es-nyujtas.webp",
+  "duration_sec": 35,
+  "quick_rest_default": false,
+  "mirror": true,
+  "sided": true,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "farizom",
+    "comb-lab"
+  ],
+  "source_reference": ""
+}
