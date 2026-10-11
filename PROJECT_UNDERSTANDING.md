@@ -154,6 +154,10 @@ is missing, the app falls back to live speech.
   in `localStorage['szerkeszto_token']` (per origin: each PR preview is a different origin, the stable
   `dev` branch deploy URL avoids re-entering). Sent as `x-edit-token` on POST to `/api/save-data`;
   cleared on 401, and the form reopens automatically with an error message.
+- **Duration table**: the "Tréning részletei" strip at the top shows the estimated total time with 2 / 3 / 4
+  rounds (`estimateDurationSec` / `durationTable`; the program's current round count is highlighted, it updates
+  live). It mirrors `buildQueue()` in `index.html` (prep, rests incl. ⚡, variants per round, `roundRest`,
+  block transitions) and was verified to equal the timer's queue sum — change both together.
 - Panels: program list (`renderMid`), program editor (`renderLeft`), computed preview
   (`renderRight`), exercise library (`renderLibraryPanel`), exercise editor modal
   (`renderExerciseForm`).

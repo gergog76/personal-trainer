@@ -57,6 +57,13 @@
   #rightContent .empty-hint{ padding:4px 0; }
   #rightContent .detail-stat{ display:inline-flex; align-items:baseline; gap:6px; border:none; padding:2px 0; font-size:12.5px; }
   #rightContent .detail-stat span:first-child::after{ content:":"; }
+  #rightContent .dur-table{ flex-basis:100%; margin:4px 0; }
+  .dur-table table{ border-collapse:collapse; font-size:12.5px; max-width:100%; }
+  .dur-table th, .dur-table td{ border:1px solid var(--line); padding:3px 10px; text-align:center; white-space:nowrap; }
+  .dur-table th{ color:var(--text-dim); font-weight:600; background:var(--bg); }
+  .dur-table th:first-child, .dur-table td.dur-label{ text-align:left; color:var(--text-dim); }
+  .dur-table td{ font-weight:600; }
+  .dur-table th.cur, .dur-table td.cur{ background:var(--surface-3); color:var(--text); }
   #rightContent .warn-block{ flex-basis:100%; margin-top:4px; }
   #rightContent .warn-block > div{ margin-top:0 !important; }
   #rightContent .warn-list{ margin:3px 0 0; padding-left:18px; }
@@ -655,6 +662,80 @@ function selectProgram(id){
 
 /* ---------- Jobb oszlop felül: kiválasztott tréning részletei ---------- */
 
+// A tréning becsült teljes ideje másodpercben a megadott körszámmal. Az index.html
+// buildQueue()-jának ütemezését tükrözi (előkészület, bemelegítés, fő körök,
+// körök közti pihenő / roundRest, levezetés, blokk-átmenetek, gyors pihenők);
+// ha ott változik az ütemezés, itt is módosítani kell.
+function estimateDurationSec(p, rounds){
+  const C = data.constants;
+  const stepsOf = (item, ex) => {
+    if (!ex) return [];
+    const dur = (ex.duration_sec != null ? ex.duration_sec : null);
+    if (ex.sided){
+      return [
+        { dur: dur || C.work_sec, quick: item.quickRest === true },
+        { dur: dur || C.work_sec, quick: item.quickRestOverride != null ? !!item.quickRestOverride : true },
+      ];
+    }
+    const d = item.durationOverride != null ? item.durationOverride : dur;
+    return [{ dur: d || C.work_sec, quick: item.quickRest != null ? !!item.quickRest : quickRestDefault(ex) }];
+  };
+  const expand = (items, pick) => {
+    const out = [];
+    (items || []).forEach(it => out.push(...stepsOf(it, pick ? pick(it) : data.exercises[it.exerciseId])));
+    return out;
+  };
+  const restBefore = st => (st && st.quick) ? C.quick_rest_sec : C.rest_sec;
+  // Lépések összideje, köztük a pihenőkkel (az első előtt nincs pihenő).
+  const seq = steps => steps.reduce((t, st, i) => t + st.dur + (i ? restBefore(st) : 0), 0);
+  const mainOf = r => expand(p.blocks.main, it => {
+    const chain = [it.exerciseId].concat(Array.isArray(it.variants) ? it.variants : []);
+    return data.exercises[chain[(r - 1) % chain.length]] || data.exercises[it.exerciseId];
+  });
+  const warmup = expand(p.blocks.warmup);
+  const cooldown = expand(p.blocks.cooldown);
+  const roundRest = expand(p.blocks.roundRest);
+
+  let total = C.prep_sec;
+  if (warmup.length) total += seq(warmup) + C.block_transition_sec;
+  for (let r = 1; r <= rounds; r++){
+    total += seq(mainOf(r));
+    if (r < rounds){
+      if (!roundRest.length) total += C.round_rest_sec;
+      else {
+        // pihenő az első elem előtt, az elemek között és az utolsó után is
+        total += seq(roundRest) + restBefore(roundRest[0]) + restBefore(mainOf(r + 1)[0]);
+      }
+    }
+  }
+  if (cooldown.length) total += C.block_transition_sec + seq(cooldown);
+  return total;
+}
+
+function fmtDuration(sec){
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+// Kis táblázat: mennyi ideig tart a tréning 2, 3 vagy 4 körrel.
+function durationTable(p){
+  const wrap = el('div', 'dur-table');
+  const tbl = document.createElement('table');
+  const head = tbl.createTHead().insertRow();
+  const body = tbl.createTBody().insertRow();
+  head.appendChild(el('th', '', 'Időtartam'));
+  body.appendChild(el('td', 'dur-label', 'összesen'));
+  [2, 3, 4].forEach(n => {
+    const th = el('th', p.rounds === n ? 'cur' : '', n + ' kör');
+    const sec = estimateDurationSec(p, n);
+    const td = el('td', p.rounds === n ? 'cur' : '', '~' + Math.round(sec / 60) + ' perc');
+    td.title = fmtDuration(sec) + ' (perc:mp)';
+    head.appendChild(th); body.appendChild(td);
+  });
+  wrap.appendChild(tbl);
+  return wrap;
+}
+
 function renderRight(){
   const c = $('#rightContent');
   const p = data.programs.find(x => x.id === selectedProgramId);
@@ -662,14 +743,12 @@ function renderRight(){
   c.innerHTML = '';
   c.appendChild(el('div','detail-stat', `<span>Azonosító</span><span>${p.id}</span>`));
   c.appendChild(el('div','detail-stat', `<span>Körök</span><span>${p.rounds}</span>`));
-  let totalSec = 0, warnings = [];
+  const warnings = [];
   const equipmentSet = new Set();
   PROGRAM_BLOCK_KEYS.forEach(k => {
     (p.blocks[k]||[]).forEach(item => {
       const ex = data.exercises[item.exerciseId];
       if (!ex){ warnings.push(`Hiányzó gyakorlat-hivatkozás: ${item.exerciseId}`); return; }
-      const dur = item.durationOverride ?? ex.duration_sec ?? data.constants.work_sec;
-      totalSec += dur * (ex.sided ? 2 : 1);
       (ex.equipment||[]).forEach(e => equipmentSet.add(e));
       if (!ex.image && !ex.legacy_pose_a) warnings.push(`Nincs kép/ábra: ${ex.name}`);
       if (!ex.description) warnings.push(`Hiányzó leírás: ${ex.name}`);
@@ -684,7 +763,7 @@ function renderRight(){
     });
     c.appendChild(el('div','detail-stat', `<span>${BLOCK_LABELS[k]}</span><span>${(p.blocks[k]||[]).length} gyakorlat</span>`));
   });
-  c.appendChild(el('div','detail-stat', `<span>Becsült idő (kör nélkül)</span><span>~${Math.round(totalSec/60)} perc</span>`));
+  c.appendChild(durationTable(p));
   c.appendChild(el('div','detail-stat', `<span>Szükséges eszközök</span><span>${equipmentSet.size ? [...equipmentSet].join(', ') : 'nincs'}</span>`));
   if (warnings.length){
     const w = el('div', 'warn-block', '<div style="margin-top:14px; font-weight:600; font-size:12.5px;">Figyelmeztetések</div>');
@@ -714,7 +793,7 @@ function renderLeft(){
   idInput.oninput = () => { p.id = slugify(idInput.value); setDirty(true); };
   const roundsInput = document.createElement('input');
   roundsInput.type = 'number'; roundsInput.min = 1; roundsInput.max = 10; roundsInput.value = p.rounds;
-  roundsInput.oninput = () => { p.rounds = parseInt(roundsInput.value)||1; setDirty(true); renderMid(); };
+  roundsInput.oninput = () => { p.rounds = parseInt(roundsInput.value)||1; setDirty(true); renderMid(); renderRight(); };
   const idWrap = el('div'); idWrap.appendChild(el('label','','Azonosító (id)')); idWrap.appendChild(idInput);
   const roundsWrap = el('div'); roundsWrap.appendChild(el('label','','Körök száma')); roundsWrap.appendChild(roundsInput);
   idRow.appendChild(idWrap); idRow.appendChild(roundsWrap);
