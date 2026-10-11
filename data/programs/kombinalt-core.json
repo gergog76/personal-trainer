@@ -50,7 +50,10 @@
       },
       {
         "exerciseId": "oldalso-plank",
-        "sided": true
+        "sided": true,
+        "variants": [
+          "oldalso-labemeles"
+        ]
       },
       {
         "exerciseId": "gerinccsavaras-labak"
@@ -80,14 +83,14 @@
       },
       {
         "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"
+      },
+      {
+        "exerciseId": "gyerekpoz"
       }
     ],
     "roundRest": [
       {
         "exerciseId": "talp-hengerezes"
-      },
-      {
-        "exerciseId": "felso-hat-nyujtas-hengeren"
       },
       {
         "exerciseId": "hatso-comb-hengerezes"
