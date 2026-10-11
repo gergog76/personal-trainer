@@ -1,0 +1,21 @@
+{
+  "name": "Láb felhúzás",
+  "category": "main",
+  "equipment": [],
+  "description": "Helyezkedjünk el hanyattfekvésben. Mindkét láb nyújtva, húzzuk fel a jobb térdet, kulcsoljuk át és a fejet emeljük hozzá. A másik láb nyújtva marad a talajon. Utána visszarakjuk a lábat nyújtva a talajra és a karjainkkal is nyújtozunk.",
+  "description_switch": "",
+  "subtitle": "",
+  "image": "images/lab-felhuzas.webp",
+  "duration_sec": 40,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "also-hat"
+  ],
+  "source_reference": ""
+}

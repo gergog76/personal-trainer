@@ -1,0 +1,22 @@
+{
+  "name": "Térd/boka nyitogatás",
+  "category": "main",
+  "equipment": [],
+  "description": "Háton fekve, felhúzott, levegőben lévő lábakkal a térdeket távolítja egymástól, miközben a talpak/bokák összeérnek.\n\nMajd a térdeket összezárva tartja (vagy egy kispárnát szorít közéjük), és a bokákat/lábfejeket távolítja egymástól kifelé.",
+  "description_switch": "",
+  "subtitle": "",
+  "image": "images/terd-boka-nyitogatas.webp",
+  "duration_sec": null,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "csipo",
+    "also-hat"
+  ],
+  "source_reference": ""
+}

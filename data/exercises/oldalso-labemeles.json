@@ -1,0 +1,22 @@
+{
+  "name": "Oldalsó lábemelés",
+  "category": "main",
+  "equipment": [],
+  "description": "Helyezkedjünk el oldalsó fekvésben. Egész test egy vonalban, sarok és fej egy vonalban. Felső kar a mell előtt támaszkodik a talajon, alsó kar alkartámaszban. Két láb egymáson fekszik, lábfejek pipálnak. Kilégzéssel emeljük meg mindkét lábat a talajtól 3-4 cm-re és tartsuk együtt a két lábat. Belégzéssel engedjük vissza a vissza a talajra lábakat.",
+  "description_switch": "",
+  "subtitle": "",
+  "image": "images/oldalso-labemeles.webp",
+  "duration_sec": null,
+  "quick_rest_default": false,
+  "mirror": false,
+  "sided": false,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "also-hat",
+    "has"
+  ],
+  "source_reference": ""
+}
