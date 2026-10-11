@@ -148,8 +148,12 @@ is missing, the app falls back to live speech.
 - Single-file, inline CSS + JS.
 - Loads `data/trainings.json` plus `GET /api/save-data` (returns the `dev` head SHA).
   A context bar shows whether saving is possible and whether a build is in progress.
-- Auth: prompts for the edit token on first save, stored in `localStorage['szerkeszto_token']`,
-  sent as `x-edit-token` on POST to `/api/save-data`; cleared on 401.
+- Auth: on first save a real login form (`#authModal`: read-only username field + password field with
+  `autocomplete="username"` / `"current-password"`, so Chrome / iCloud Keychain can offer to save and
+  autofill it; the old native `prompt()` could not be saved) asks for the edit token. "Megjegyzés" stores it
+  in `localStorage['szerkeszto_token']` (per origin: each PR preview is a different origin, the stable
+  `dev` branch deploy URL avoids re-entering). Sent as `x-edit-token` on POST to `/api/save-data`;
+  cleared on 401, and the form reopens automatically with an error message.
 - Panels: program list (`renderMid`), program editor (`renderLeft`), computed preview
   (`renderRight`), exercise library (`renderLibraryPanel`), exercise editor modal
   (`renderExerciseForm`).
