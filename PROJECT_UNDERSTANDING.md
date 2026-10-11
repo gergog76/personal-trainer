@@ -153,6 +153,15 @@ is missing, the app falls back to live speech.
 - Panels: program list (`renderMid`), program editor (`renderLeft`), computed preview
   (`renderRight`), exercise library (`renderLibraryPanel`), exercise editor modal
   (`renderExerciseForm`).
+- **Gyakorlatok view** (`#gyakorlatok`, the header's "Gyakorlatok" button, full-page inside the
+  same file so it shares `data`, the save and the exercise dialog): cards with all exercise
+  details, filters (name, category, muscle group), ✎ edit / "+ Új gyakorlat" (the existing
+  `#exModal`) and 🗑 delete. Delete (`openDeleteDialog` → `applyExerciseDeletion`, also reachable
+  from the exercise dialog) lists the program rows that use the exercise (`findUsages`; base or
+  round-variant, any block incl. `roundRest`) and asks per row for a replacement or "no replacement"
+  (the row is dropped / the variant chain gets shorter; the first remaining variant becomes the
+  base). Replacement candidates keep the chain's `sided` consistency. Nothing is committed until
+  Save; image and `audio/` files are not deleted automatically.
 - Image upload: resized client-side to a webp Blob (jpeg fallback), staged in `pendingImages`,
   committed as a real file in `images/` on save. No `data:` URLs — the record only ever holds
   a path.
