@@ -169,6 +169,11 @@ is missing, the app falls back to live speech.
 - Image upload: resized client-side to a webp Blob (jpeg fallback), staged in `pendingImages`,
   committed as a real file in `images/` on save. No `data:` URLs — the record only ever holds
   a path.
+  **Animated images** (GIF with ≥2 frames, animated WebP, APNG; detected by byte sniffing in
+  `animatedImageExt`) skip the canvas resize — it would keep only the first frame — and are staged
+  unchanged with their own extension (`images/<slug>.gif|webp|png`), max 3 MB (the save function
+  accepts ~4 MB of images per save). Everything else is still resized to webp. The previews and
+  cards use plain `<img>`, so animation plays natively.
 
 ## Backend
 

@@ -415,18 +415,59 @@ function imagePathsInUse(){
 }
 
 // Szabad kép-útvonalat választ egy alapnév köré (ütközésnél rövid utótag).
-function freeImagePath(base){
+function freeImagePath(base, ext = 'webp'){
   const slug = slugify(base) || 'kep';
   const used = imagePathsInUse();
-  let cand = `images/${slug}.webp`;
+  let cand = `images/${slug}.${ext}`;
   while (used.has(cand) || pendingImages.has(cand)){
-    cand = `images/${slug}-${Math.random().toString(36).slice(2, 6)}.webp`;
+    cand = `images/${slug}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
   }
   return cand;
 }
 
-// A kiválasztott fájlt átméretezi, felstage-eli, és visszaadja az útvonalát.
+// Animált kép (GIF / animált WebP / APNG) felismerése a fájl bájtjaiból; a
+// visszaadott érték a megtartandó kiterjesztés, állókép esetén null. A canvasos
+// átméretezés (resizeImageToBlob) csak az első képkockát őrizné meg, ezért az
+// animált képeket érintetlenül töltjük fel.
+async function animatedImageExt(file){
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const str = (a, b) => String.fromCharCode(...buf.subarray(a, b));
+  if (str(0, 4) === 'GIF8'){
+    let frames = 0;   // grafikus vezérlő kiterjesztések (21 F9): >= 2 -> több képkocka
+    for (let i = 0; i + 1 < buf.length; i++){
+      if (buf[i] === 0x21 && buf[i + 1] === 0xF9 && ++frames >= 2) return 'gif';
+    }
+    return null;
+  }
+  if (str(0, 4) === 'RIFF' && str(8, 12) === 'WEBP'){
+    return (str(12, 16) === 'VP8X' && (buf[20] & 0x02)) ? 'webp' : null;   // animáció-bit
+  }
+  if (buf[0] === 0x89 && str(1, 4) === 'PNG'){
+    for (let i = 8; i + 8 <= buf.length;){
+      const len = ((buf[i] << 24) | (buf[i + 1] << 16) | (buf[i + 2] << 8) | buf[i + 3]) >>> 0;
+      const type = str(i + 4, i + 8);
+      if (type === 'acTL') return 'png';   // APNG animáció-vezérlő
+      if (type === 'IDAT') return null;
+      i += 12 + len;
+    }
+  }
+  return null;
+}
+
+const MAX_ANIMATED_BYTES = 3 * 1024 * 1024;   // a mentés egyszerre ~4 MB képet fogad (save-data.mjs)
+
+// A kiválasztott fájlt átméretezi (animáltat érintetlenül hagyja), felstage-eli,
+// és visszaadja az útvonalát.
 async function stageImage(file, base){
+  const animExt = await animatedImageExt(file);
+  if (animExt){
+    if (file.size > MAX_ANIMATED_BYTES){
+      throw new Error(`az animált kép ${(file.size / 1048576).toFixed(1)} MB, a limit 3 MB – kicsinyítsd vagy rövidítsd az animációt`);
+    }
+    const path = freeImagePath(base, animExt);
+    pendingImages.set(path, file);
+    return path;
+  }
   const blob = await resizeImageToBlob(file, 800, 0.85);
   const path = freeImagePath(base);
   pendingImages.set(path, blob);
