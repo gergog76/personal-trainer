@@ -10,5 +10,10 @@
   "sided": true,
   "muscle_groups": [
     "csipo"
-  ]
+  ],
+  "description_switch": "Válts oldalt",
+  "side_labels": {
+    "left": "bal láb",
+    "right": "jobb láb"
+  }
 }
