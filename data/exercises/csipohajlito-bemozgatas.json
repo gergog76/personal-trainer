@@ -4,11 +4,16 @@
   "equipment": [],
   "description": "Állva, lassú, kontrollált lépésekkel emeld egy kicsit magasabbra a térded helyben járás közben, hogy bemozgasd a csípőt.",
   "image": "images/csipohajlitobemozgatas.webp",
-  "duration_sec": 30,
+  "duration_sec": 20,
   "quick_rest_default": false,
   "mirror": false,
-  "sided": false,
+  "sided": true,
   "muscle_groups": [
     "csipo"
-  ]
+  ],
+  "description_switch": "Válts oldalt",
+  "side_labels": {
+    "left": "bal láb",
+    "right": "jobb láb"
+  }
 }

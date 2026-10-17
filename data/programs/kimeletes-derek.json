@@ -12,23 +12,23 @@
     ],
     "main": [
       {
-        "exerciseId": "macska-teve-kontrollalt"
+        "exerciseId": "macska-teve-mozgas"
       },
       {
-        "exerciseId": "bird-dog-v2",
+        "exerciseId": "bird-dog",
         "sided": true
       },
       {
         "exerciseId": "mckenzie-kobra-nyujtas"
       },
       {
-        "exerciseId": "dead-bug-v2"
+        "exerciseId": "dead-bug"
       },
       {
-        "exerciseId": "csipoemeles-v2"
+        "exerciseId": "csipoemeles"
       },
       {
-        "exerciseId": "oldalso-plank-v2",
+        "exerciseId": "oldalso-plank",
         "sided": true
       }
     ],

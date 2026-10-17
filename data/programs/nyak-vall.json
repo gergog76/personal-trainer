@@ -30,7 +30,7 @@
         "sided": true
       },
       {
-        "exerciseId": "lapocka-osszehuzas"
+        "exerciseId": "lapocka-osszehuzas-allva"
       },
       {
         "exerciseId": "fal-angyal"
@@ -40,7 +40,7 @@
         "sided": true
       },
       {
-        "exerciseId": "gyerekpoz-szalag-szethuzas"
+        "exerciseId": "gumiszalag-szethuzas-gyermekpozban"
       }
     ],
     "cooldown": [

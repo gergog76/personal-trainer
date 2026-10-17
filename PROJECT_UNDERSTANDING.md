@@ -43,9 +43,14 @@ running on a PR preview (can save) or production (read-only), and which commit i
 ## Editing workflow
 
 The editor (`szerkeszto.html`) only allows saving when served from a **`dev` → `main` PR
-deploy preview** (or a `dev` branch deploy, if one is ever enabled). Production is read-only.
+deploy preview** or from the **`dev` branch deploy** (`https://dev--<site>.netlify.app/szerkeszto`,
+Netlify → Branches and deploy contexts → Branch deploys → add `dev`). Production is read-only.
+The branch deploy lets you edit without an open PR (a PR cannot exist while `dev` and `main`
+are identical). A branch deploy is only built by a **new push** to `dev` after it is enabled, and
+`EDIT_TOKEN` / `GITHUB_TOKEN` must be scoped to include *Branch deploys* too. Branch deploys and
+deploy previews are not metered by Netlify credits; only production deploys (merges to `main`) are.
 
-1. Open (or keep open) a PR from `dev` to `main`.
+1. Open the `dev` branch deploy, or (alternatively) keep a PR from `dev` to `main` open.
 2. Edit on the PR's deploy preview URL. **Save** POSTs the whole dataset to `/api/save-data`.
 3. `save-data.mjs` diffs it against the current `dev` tree and pushes ONE atomic commit to
    `dev` via the GitHub Git Data API (blob → tree → commit → ref). Changed JSON files and
@@ -143,14 +148,36 @@ is missing, the app falls back to live speech.
 - Single-file, inline CSS + JS.
 - Loads `data/trainings.json` plus `GET /api/save-data` (returns the `dev` head SHA).
   A context bar shows whether saving is possible and whether a build is in progress.
-- Auth: prompts for the edit token on first save, stored in `localStorage['szerkeszto_token']`,
-  sent as `x-edit-token` on POST to `/api/save-data`; cleared on 401.
+- Auth: on first save a real login form (`#authModal`: read-only username field + password field with
+  `autocomplete="username"` / `"current-password"`, so Chrome / iCloud Keychain can offer to save and
+  autofill it; the old native `prompt()` could not be saved) asks for the edit token. "Megjegyzés" stores it
+  in `localStorage['szerkeszto_token']` (per origin: each PR preview is a different origin, the stable
+  `dev` branch deploy URL avoids re-entering). Sent as `x-edit-token` on POST to `/api/save-data`;
+  cleared on 401, and the form reopens automatically with an error message.
+- **Duration table**: the "Tréning részletei" strip at the top shows the estimated total time with 2 / 3 / 4
+  rounds (`estimateDurationSec` / `durationTable`; the program's current round count is highlighted, it updates
+  live). It mirrors `buildQueue()` in `index.html` (prep, rests incl. ⚡, variants per round, `roundRest`,
+  block transitions) and was verified to equal the timer's queue sum — change both together.
 - Panels: program list (`renderMid`), program editor (`renderLeft`), computed preview
   (`renderRight`), exercise library (`renderLibraryPanel`), exercise editor modal
   (`renderExerciseForm`).
+- **Gyakorlatok view** (`#gyakorlatok`, the header's "Gyakorlatok" button, full-page inside the
+  same file so it shares `data`, the save and the exercise dialog): cards with all exercise
+  details, filters (name, category, muscle group), ✎ edit / "+ Új gyakorlat" (the existing
+  `#exModal`) and 🗑 delete. Delete (`openDeleteDialog` → `applyExerciseDeletion`, also reachable
+  from the exercise dialog) lists the program rows that use the exercise (`findUsages`; base or
+  round-variant, any block incl. `roundRest`) and asks per row for a replacement or "no replacement"
+  (the row is dropped / the variant chain gets shorter; the first remaining variant becomes the
+  base). Replacement candidates keep the chain's `sided` consistency. Nothing is committed until
+  Save; image and `audio/` files are not deleted automatically.
 - Image upload: resized client-side to a webp Blob (jpeg fallback), staged in `pendingImages`,
   committed as a real file in `images/` on save. No `data:` URLs — the record only ever holds
   a path.
+  **Animated images** (GIF with ≥2 frames, animated WebP, APNG; detected by byte sniffing in
+  `animatedImageExt`) skip the canvas resize — it would keep only the first frame — and are staged
+  unchanged with their own extension (`images/<slug>.gif|webp|png`), max 3 MB (the save function
+  accepts ~4 MB of images per save). Everything else is still resized to webp. The previews and
+  cards use plain `<img>`, so animation plays natively.
 
 ## Backend
 
