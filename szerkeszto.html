@@ -117,6 +117,11 @@
   .bi-var-chip.base{ color:var(--text); }
   .bi-var-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:11px; padding:0 1px; line-height:1; }
   .bi-var-chip button:hover{ color:var(--danger); }
+  .bi-var-chip button.on{ color:var(--accent); }
+  .bi-var-chip button.dur:hover{ color:var(--text); }
+  .dur-row{ display:flex; align-items:center; gap:8px; }
+  .dur-row input{ width:110px; }
+  .dur-hint{ font-size:12px; color:var(--text-dim); margin:6px 0 0; }
   .bi-var-note{ font-size:10px; color:var(--text-dim); font-style:italic; }
   .empty-hint{ color:var(--text-dim); font-size:13px; padding:20px 0; text-align:center; }
 
@@ -322,6 +327,28 @@
       <button class="btn" id="delCancel">Mégse</button>
       <button class="btn danger solid" id="delConfirm" disabled>Törlés</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="durModal">
+  <div class="modal" style="max-width:420px;">
+    <h3 id="durTitle">Időtartam</h3>
+    <form id="durForm">
+      <label for="durInput">Időtartam ebben a tréningben (mp)</label>
+      <div class="dur-row">
+        <input type="number" id="durInput" min="1" step="1">
+        <button type="button" class="btn small" id="durReset">Alapérték</button>
+      </div>
+      <div class="dur-hint" id="durHint"></div>
+      <div style="margin-top:16px;">
+        <button type="button" class="btn" id="durEditEx">✎ Eredeti gyakorlat szerkesztése</button>
+        <div class="dur-hint" id="durShared"></div>
+      </div>
+      <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn" id="durCancel">Mégse</button>
+        <button type="submit" class="btn primary">Kész</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -662,27 +689,57 @@ function selectProgram(id){
 
 /* ---------- Jobb oszlop felül: kiválasztott tréning részletei ---------- */
 
+// Sor-szintű időtartam-felülírás (mp): az alap gyakorlathoz (vid nélkül) a
+// "durationOverride", a kör-variánshoz a "variantDurations[vid]". null = nincs.
+function rowDuration(item, vid){
+  if (vid == null) return item.durationOverride != null ? item.durationOverride : null;
+  const m = item.variantDurations;
+  return (m && m[vid] != null) ? m[vid] : null;
+}
+function setRowDuration(item, vid, sec){
+  if (vid == null){
+    if (sec == null) delete item.durationOverride; else item.durationOverride = sec;
+    return;
+  }
+  if (sec == null){
+    if (item.variantDurations) delete item.variantDurations[vid];
+  } else {
+    (item.variantDurations || (item.variantDurations = {}))[vid] = sec;
+  }
+  pruneVariantDurations(item);
+}
+// Árva kulcsok és az üres map eltávolítása (pl. variáns törlése után).
+function pruneVariantDurations(item){
+  if (!item.variantDurations) return;
+  const keep = Array.isArray(item.variants) ? item.variants : [];
+  Object.keys(item.variantDurations).forEach(k => { if (!keep.includes(k)) delete item.variantDurations[k]; });
+  if (!Object.keys(item.variantDurations).length) delete item.variantDurations;
+}
+
 // A tréning becsült teljes ideje másodpercben a megadott körszámmal. Az index.html
 // buildQueue()-jának ütemezését tükrözi (előkészület, bemelegítés, fő körök,
 // körök közti pihenő / roundRest, levezetés, blokk-átmenetek, gyors pihenők);
 // ha ott változik az ütemezés, itt is módosítani kell.
 function estimateDurationSec(p, rounds){
   const C = data.constants;
-  const stepsOf = (item, ex) => {
+  const stepsOf = (item, ex, ov) => {
     if (!ex) return [];
-    const dur = (ex.duration_sec != null ? ex.duration_sec : null);
+    // sor-szintű felülírás -> a gyakorlat alapideje (sided: mindkét oldalra)
+    const dur = ov != null ? ov : (ex.duration_sec != null ? ex.duration_sec : null);
     if (ex.sided){
       return [
         { dur: dur || C.work_sec, quick: item.quickRest === true },
         { dur: dur || C.work_sec, quick: item.quickRestOverride != null ? !!item.quickRestOverride : true },
       ];
     }
-    const d = item.durationOverride != null ? item.durationOverride : dur;
-    return [{ dur: d || C.work_sec, quick: item.quickRest != null ? !!item.quickRest : quickRestDefault(ex) }];
+    return [{ dur: dur || C.work_sec, quick: item.quickRest != null ? !!item.quickRest : quickRestDefault(ex) }];
   };
   const expand = (items, pick) => {
     const out = [];
-    (items || []).forEach(it => out.push(...stepsOf(it, pick ? pick(it) : data.exercises[it.exerciseId])));
+    (items || []).forEach(it => {
+      const [ex, ov] = pick ? pick(it) : [data.exercises[it.exerciseId], it.durationOverride];
+      out.push(...stepsOf(it, ex, ov));
+    });
     return out;
   };
   const restBefore = st => (st && st.quick) ? C.quick_rest_sec : C.rest_sec;
@@ -690,7 +747,9 @@ function estimateDurationSec(p, rounds){
   const seq = steps => steps.reduce((t, st, i) => t + st.dur + (i ? restBefore(st) : 0), 0);
   const mainOf = r => expand(p.blocks.main, it => {
     const chain = [it.exerciseId].concat(Array.isArray(it.variants) ? it.variants : []);
-    return data.exercises[chain[(r - 1) % chain.length]] || data.exercises[it.exerciseId];
+    const id = chain[(r - 1) % chain.length];
+    if (!data.exercises[id] || id === it.exerciseId) return [data.exercises[it.exerciseId], it.durationOverride];
+    return [data.exercises[id], rowDuration(it, id)];
   });
   const warmup = expand(p.blocks.warmup);
   const cooldown = expand(p.blocks.cooldown);
@@ -821,6 +880,8 @@ function renderLeft(){
       if (quick) row.appendChild(el('span','bi-badge variant','⚡ gyors pihenő'));
       else if (item.quickRest === false && quickRestDefault(ex)) row.appendChild(el('span','bi-badge','normál pihenő'));
       if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns'));
+      const rowDur = rowDuration(item, null);
+      if (rowDur != null) row.appendChild(el('span','bi-badge variant','⏱ ' + rowDur + ' mp'));
       const up = el('button','','↑'); up.title='Feljebb';
       up.onclick = () => { if (idx>0){ [items[idx-1],items[idx]]=[items[idx],items[idx-1]]; setDirty(true); renderLeft(); } };
       const down = el('button','','↓'); down.title='Lejjebb';
@@ -859,21 +920,31 @@ function renderLeft(){
         };
         row.appendChild(varB);
       }
+      const durB = el('button', rowDur != null ? 'on' : '', '⏱');
+      durB.title = 'Időtartam ebben a tréningben' + (rowDur != null ? ` (most: ${rowDur} mp)` : '') + ' – és ugrás az eredeti gyakorlat szerkesztésére';
+      durB.onclick = () => openDurationDialog(item, null, null);
+      row.appendChild(durB);
       row.appendChild(editB); row.appendChild(rm);
       if (ex) attachTooltip(row, ex);
       listWrap.appendChild(row);
 
       if (blockKey === 'main' && variants.length){
         const vwrap = el('div','bi-variants');
-        vwrap.appendChild(el('span','bi-var-chip base', '1. kör: ' + (ex ? ex.name : item.exerciseId)));
+        vwrap.appendChild(el('span','bi-var-chip base', '1. kör: ' + (ex ? ex.name : item.exerciseId) + (rowDur != null ? ' · ⏱ ' + rowDur + ' mp' : '')));
         variants.forEach((vid, vi) => {
           const vex = data.exercises[vid];
-          const chip = el('span','bi-var-chip', (vi + 2) + '. kör: ' + (vex ? vex.name : '(hiányzó: ' + vid + ')'));
+          const vdur = rowDuration(item, vid);
+          const chip = el('span','bi-var-chip', (vi + 2) + '. kör: ' + (vex ? vex.name : '(hiányzó: ' + vid + ')') + (vdur != null ? ' · ⏱ ' + vdur + ' mp' : ''));
+          const vdurB = el('button', 'dur' + (vdur != null ? ' on' : ''), '⏱');
+          vdurB.title = 'Időtartam ebben a tréningben – és ugrás az eredeti gyakorlat szerkesztésére';
+          vdurB.onclick = () => openDurationDialog(item, vid, (vi + 2) + '. kör variáns');
+          chip.appendChild(vdurB);
           const del = el('button','','✕'); del.title = 'Variáns eltávolítása';
           del.onclick = () => {
             item.variants.splice(vi, 1);
             if (!item.variants.length) delete item.variants;
-            setDirty(true); renderLeft();
+            pruneVariantDurations(item);
+            setDirty(true); renderLeft(); renderRight();
           };
           chip.appendChild(del);
           vwrap.appendChild(chip);
@@ -1541,16 +1612,23 @@ function applyExerciseDeletion(exId, uses, choices){
   let replaced = 0, shortened = 0, removedRows = 0;
   const removeItems = new Set();
   groups.forEach((entries, item) => {
-    const chain = [{ id: item.exerciseId }].concat((Array.isArray(item.variants) ? item.variants : []).map(id => ({ id })));
+    // A sor-szintű időtartam-felülírás a lánc POZÍCIÓJÁHOZ tartozik: helyettesítéskor
+    // marad, "nincs helyettesítő"-nél a pozícióval együtt törlődik.
+    const chain = [{ id: item.exerciseId, dur: rowDuration(item, null) }]
+      .concat((Array.isArray(item.variants) ? item.variants : []).map(id => ({ id, dur: rowDuration(item, id) })));
     let anyNone = false;
     entries.forEach(({ pos, choice }) => {
       if (choice === NONE_CHOICE){ chain[pos].del = true; anyNone = true; }
       else { chain[pos].id = choice; replaced++; }
     });
-    const kept = chain.filter(c => !c.del).map(c => c.id);
+    const keptC = chain.filter(c => !c.del);
+    const kept = keptC.map(c => c.id);
     if (!kept.length){ removeItems.add(item); removedRows++; return; }
     item.exerciseId = kept[0];
     if (kept.length > 1) item.variants = kept.slice(1); else delete item.variants;
+    delete item.variantDurations;
+    if (keptC[0].dur != null) item.durationOverride = keptC[0].dur; else delete item.durationOverride;
+    keptC.slice(1).forEach(c => { if (c.dur != null) setRowDuration(item, c.id, c.dur); });
     if (anyNone) shortened++;
   });
 
@@ -1570,6 +1648,64 @@ function applyExerciseDeletion(exId, uses, choices){
   if (removedRows) parts.push(`${removedRows} sor kimaradt`);
   toast(`Törölve: „${name}”` + (parts.length ? ' – ' + parts.join(', ') : '') + '. A Mentéssel kerül a dev ágra.');
 }
+
+/* ---------- Időtartam-felülírás (csak az adott tréning-sorban) ---------- */
+
+let durCtx = null;
+
+function openDurationDialog(item, vid, label){
+  const exId = vid != null ? vid : item.exerciseId;
+  const ex = data.exercises[exId];
+  durCtx = { item, vid, exId };
+  hideTooltip();   // az egér még a soron áll: ne maradjon a hover-előnézet a párbeszéd fölött
+  $('#durTitle').textContent = (ex ? ex.name : exId) + (label ? ' – ' + label : '');
+  const base = ex && ex.duration_sec != null ? ex.duration_sec : null;
+  const input = $('#durInput');
+  const cur = rowDuration(item, vid);
+  input.value = cur != null ? cur : '';
+  input.placeholder = String(base != null ? base : data.constants.work_sec);
+  $('#durHint').textContent = 'Üresen hagyva a gyakorlat alapideje érvényes: '
+    + (base != null ? base + ' mp' : data.constants.work_sec + ' mp (fő rész alapérték)')
+    + (ex && ex.sided ? '. Bal/jobb gyakorlatnál mindkét oldalra.' : '.');
+  const n = ex ? findUsages(exId).length : 0;
+  $('#durShared').textContent = 'A gyakorlat leírása, képe és alapideje közös: a szerkesztése minden tréningre hat'
+    + (n ? ` (${n} sorban szerepel).` : '.');
+  $('#durEditEx').disabled = !ex;
+  $('#durModal').classList.add('open');
+  setTimeout(() => input.focus(), 0);
+}
+
+function closeDurationDialog(){
+  $('#durModal').classList.remove('open');
+  durCtx = null;
+}
+
+// Beírt érték elmentése a sorba; false, ha érvénytelen (a párbeszéd nyitva marad).
+function commitDuration(){
+  if (!durCtx) return true;
+  const raw = $('#durInput').value.trim();
+  let sec = null;
+  if (raw !== ''){
+    sec = Number(raw);
+    if (!Number.isInteger(sec) || sec < 1){ toast('Az időtartam pozitív egész szám (mp) legyen.', true); return false; }
+  }
+  const { item, vid } = durCtx;
+  if (rowDuration(item, vid) !== sec){
+    setRowDuration(item, vid, sec);
+    setDirty(true); renderLeft(); renderRight();
+  }
+  return true;
+}
+
+$('#durForm').addEventListener('submit', (e) => { e.preventDefault(); if (commitDuration()) closeDurationDialog(); });
+$('#durCancel').onclick = closeDurationDialog;
+$('#durReset').onclick = () => { $('#durInput').value = ''; $('#durInput').focus(); };
+$('#durEditEx').onclick = () => {
+  if (!durCtx || !commitDuration()) return;
+  const id = durCtx.exId;
+  closeDurationDialog();
+  openExerciseEditor(id, false);
+};
 
 /* ---------- Mobil tab-váltás ---------- */
 

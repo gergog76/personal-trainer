@@ -538,7 +538,9 @@ window.addEventListener('unhandledrejection', function(e){
   // (a régi, beégetett formátumnak megfelelő) elemmé. A blockItem az adott
   // program-blokkban lévő hivatkozás (esetleges felülírásokkal), az exercise
   // pedig a gyakorlatkönyvtár rekordja.
-  function expandBlockItem(blockItem, exercise){
+  // durOverride: a program-sor saját időtartama (mp) a gyakorlat alapideje helyett;
+  // a sided gyakorlatnál mindkét oldalra érvényes.
+  function expandBlockItem(blockItem, exercise, durOverride = blockItem.durationOverride){
     if (!exercise) return [];
     const base = {
       name: exercise.name,
@@ -549,6 +551,7 @@ window.addEventListener('unhandledrejection', function(e){
       poseB: exercise.legacy_pose_b,
     };
     if (exercise.duration_sec != null) base.duration = exercise.duration_sec;
+    if (durOverride != null) base.duration = durOverride;
 
     if (exercise.sided){
       const left = Object.assign({}, base, {
@@ -568,7 +571,6 @@ window.addEventListener('unhandledrejection', function(e){
     }
 
     const item = Object.assign({}, base);
-    if (blockItem.durationOverride != null) item.duration = blockItem.durationOverride;
     const quickRest = blockItem.quickRest != null ? blockItem.quickRest : !!exercise.quick_rest_default;
     if (quickRest) item.quickRest = true;
     return [item];
@@ -594,6 +596,20 @@ window.addEventListener('unhandledrejection', function(e){
     return exercisesById[chain[idx]] || exercisesById[item.exerciseId];
   }
 
+  // Az adott körben használt lánc-elem sor-szintű időtartam-felülírása (mp) vagy
+  // null (NEM undefined: az expandBlockItem alapértelmezett paramétere azt az
+  // alap gyakorlat felülírására cserélné): az alap gyakorlaté a "durationOverride", a variánsoké a
+  // "variantDurations" (gyakorlat-id szerint). Ugyanazt a láncot indexeli, mint
+  // a pickVariantExercise (hiányzó variáns -> az alap gyakorlat).
+  function pickVariantDuration(item, round, exercisesById){
+    const chain = [item.exerciseId].concat(Array.isArray(item.variants) ? item.variants : []);
+    const r = Math.max(1, round | 0);
+    const id = chain[(r - 1) % chain.length];
+    if (!exercisesById[id] || id === item.exerciseId) return item.durationOverride != null ? item.durationOverride : null;
+    const vd = item.variantDurations;
+    return (vd && vd[id] != null) ? vd[id] : null;
+  }
+
   // A fő blokk nyers elemeiből olyan függvényt készít, amely egy adott körre
   // kibontott (a régi lapos formátumú) gyakorlat-tömböt ad vissza. Körönként
   // gyorsítótáraz. A szerkesztő gondoskodik róla, hogy egy pozíció összes
@@ -606,7 +622,7 @@ window.addEventListener('unhandledrejection', function(e){
       if (cache[r]) return cache[r];
       const out = [];
       (rawMain || []).forEach(item => {
-        out.push(...expandBlockItem(item, pickVariantExercise(item, r, exercisesById)));
+        out.push(...expandBlockItem(item, pickVariantExercise(item, r, exercisesById), pickVariantDuration(item, r, exercisesById)));
       });
       cache[r] = out;
       return out;

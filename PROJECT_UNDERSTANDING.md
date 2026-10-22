@@ -82,6 +82,10 @@ exercises: {
 programs: [
   { id, name, rounds, blocks: { warmup: [...], main: [...], cooldown: [...], roundRest?: [...] } }
   // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
+  // durationOverride? (int, seconds): this row's duration instead of the exercise's own duration_sec
+  //   (both sides of a `sided` exercise); set with the ⏱ button (any block)
+  // main block items only: variantDurations?: { "<variantExId>": seconds } — the same override for a
+  //   round-variant exercise (keyed by exercise id; the base exercise uses durationOverride)
   // quickRest (bool, set with the ⚡ button on the editor's program rows) = the rest BEFORE this
   // step is quick_rest_sec instead of rest_sec; absent = the exercise's quick_rest_default
   // (ignored for the first side of a `sided` exercise)
@@ -154,6 +158,13 @@ is missing, the app falls back to live speech.
   in `localStorage['szerkeszto_token']` (per origin: each PR preview is a different origin, the stable
   `dev` branch deploy URL avoids re-entering). Sent as `x-edit-token` on POST to `/api/save-data`;
   cleared on 401, and the form reopens automatically with an error message.
+- **Per-row duration (⏱)**: every program row and every round-variant chip has a ⏱ button opening the small
+  `#durModal` ("Időtartam ebben a tréningben"): sets `durationOverride` / `variantDurations[id]` only for that
+  training (empty = the exercise's own duration). The dialog's "✎ Eredeti gyakorlat szerkesztése" button jumps to
+  the shared exercise editor (which changes the exercise for ALL programs; the dialog says how many rows use it).
+  The override belongs to the chain *position*: replacing an exercise on delete keeps it, "no replacement" drops it.
+  `index.html` applies it in `expandBlockItem` / `pickVariantDuration` (must pass `null`, not `undefined`, because of
+  the default parameter) and `estimateDurationSec` mirrors it.
 - **Duration table**: the "Tréning részletei" strip at the top shows the estimated total time with 2 / 3 / 4
   rounds (`estimateDurationSec` / `durationTable`; the program's current round count is highlighted, it updates
   live). It mirrors `buildQueue()` in `index.html` (prep, rests incl. ⚡, variants per round, `roundRest`,
