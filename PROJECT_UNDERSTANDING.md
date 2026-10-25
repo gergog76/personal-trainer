@@ -84,6 +84,8 @@ programs: [
   // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
   // durationOverride? (int, seconds): this row's duration instead of the exercise's own duration_sec
   //   (both sides of a `sided` exercise); set with the ⏱ button (any block)
+  // main block items only: randomOrder? (bool, set with the 🎲 toggle under a variant row): the order of the
+  //   variant chain is drawn at random instead of fixed (see "Random variant order" below)
   // main block items only: variantDurations?: { "<variantExId>": seconds } — the same override for a
   //   round-variant exercise (keyed by exercise id; the base exercise uses durationOverride)
   // quickRest (bool, set with the ⚡ button on the editor's program rows) = the rest BEFORE this
@@ -105,6 +107,12 @@ programs: [
   `(N-1) % chain.length`, so exercises cycle round to round. Timer-side this is resolved by
   `makeMainResolver` in `index.html`. `validate` enforces that every exercise in one chain
   shares the same `sided` flag, so the per-position step count stays constant across rounds.
+- **Random variant order (`randomOrder: true`)**: `makeMainResolver` in `index.html` draws one random integer per
+  such row when the workout is loaded / selected (`reroll()`, also on `switchWorkout`, so a page reload or switching
+  away and back re-draws; never mid-workout, the rounds ± button does not change it). The chain order is the
+  permutation number `roll mod n!` (`variantOrder`, Lehmer code, 0 = original): with 2 exercises an even roll keeps
+  the order, an odd one swaps it. Durations follow the exercise (`pickVariantDuration` uses the picked id). The
+  `?debug` bar logs the rolls. The editor's duration table counts the original order only (a note says so).
 - Exercise IDs are slugs of the Hungarian name (accent-stripped, lowercased, hyphenated) —
   `slugify` in `lib/data-schema.mjs`, the one remaining copy.
 - `sided` exercises get expanded into two timer steps (left/right) at runtime by

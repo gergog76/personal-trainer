@@ -58,6 +58,7 @@
   #rightContent .detail-stat{ display:inline-flex; align-items:baseline; gap:6px; border:none; padding:2px 0; font-size:12.5px; }
   #rightContent .detail-stat span:first-child::after{ content:":"; }
   #rightContent .dur-table{ flex-basis:100%; margin:4px 0; }
+  .dur-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
   .dur-table table{ border-collapse:collapse; font-size:12.5px; max-width:100%; }
   .dur-table th, .dur-table td{ border:1px solid var(--line); padding:3px 10px; text-align:center; white-space:nowrap; }
   .dur-table th{ color:var(--text-dim); font-weight:600; background:var(--bg); }
@@ -122,6 +123,9 @@
   .dur-row{ display:flex; align-items:center; gap:8px; }
   .dur-row input{ width:110px; }
   .dur-hint{ font-size:12px; color:var(--text-dim); margin:6px 0 0; }
+  .bi-variants button.rnd{ background:none; border:1px solid var(--line); border-radius:5px; color:var(--text-dim); cursor:pointer; font-size:10.5px; padding:1px 6px; }
+  .bi-variants button.rnd.on{ color:var(--accent); border-color:var(--accent); }
+  .bi-variants button.rnd:hover{ color:var(--text); }
   .bi-var-note{ font-size:10px; color:var(--text-dim); font-style:italic; }
   .empty-hint{ color:var(--text-dim); font-size:13px; padding:20px 0; text-align:center; }
 
@@ -792,6 +796,9 @@ function durationTable(p){
     head.appendChild(th); body.appendChild(td);
   });
   wrap.appendChild(tbl);
+  if ((p.blocks.main || []).some(it => it.randomOrder && Array.isArray(it.variants) && it.variants.length)){
+    wrap.appendChild(el('div', 'dur-note', '🎲 Véletlen sorrendű variáns van: az idő az eredeti sorrenddel számolt, a tényleges kissé eltérhet.'));
+  }
   return wrap;
 }
 
@@ -879,7 +886,7 @@ function renderLeft(){
       const quick = effectiveQuickRest(item, ex);
       if (quick) row.appendChild(el('span','bi-badge variant','⚡ gyors pihenő'));
       else if (item.quickRest === false && quickRestDefault(ex)) row.appendChild(el('span','bi-badge','normál pihenő'));
-      if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns'));
+      if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns' + (item.randomOrder ? ' 🎲' : '')));
       const rowDur = rowDuration(item, null);
       if (rowDur != null) row.appendChild(el('span','bi-badge variant','⏱ ' + rowDur + ' mp'));
       const up = el('button','','↑'); up.title='Feljebb';
@@ -942,14 +949,23 @@ function renderLeft(){
           const del = el('button','','✕'); del.title = 'Variáns eltávolítása';
           del.onclick = () => {
             item.variants.splice(vi, 1);
-            if (!item.variants.length) delete item.variants;
+            if (!item.variants.length){ delete item.variants; delete item.randomOrder; }
             pruneVariantDurations(item);
             setDirty(true); renderLeft(); renderRight();
           };
           chip.appendChild(del);
           vwrap.appendChild(chip);
         });
-        vwrap.appendChild(el('span','bi-var-note', '· a körök közt ismétlődik'));
+        const rndB = el('button', 'rnd' + (item.randomOrder ? ' on' : ''), '🎲 véletlen sorrend');
+        rndB.title = item.randomOrder
+          ? 'Be: az edzés indításakor sorsolódik a sorrend (páros szám: eredeti, páratlan: felcserélt). Kattints a rögzített sorrendhez.'
+          : 'Ki: rögzített sorrend. Kattints, hogy az edzés indításakor véletlenszerűen sorsolódjon.';
+        rndB.onclick = () => {
+          if (item.randomOrder) delete item.randomOrder; else item.randomOrder = true;
+          setDirty(true); renderLeft(); renderRight();
+        };
+        vwrap.appendChild(rndB);
+        vwrap.appendChild(el('span','bi-var-note', item.randomOrder ? '· a sorrend indításkor sorsolódik, utána a körök közt ismétlődik' : '· a körök közt ismétlődik'));
         listWrap.appendChild(vwrap);
       }
     });
@@ -1625,7 +1641,7 @@ function applyExerciseDeletion(exId, uses, choices){
     const kept = keptC.map(c => c.id);
     if (!kept.length){ removeItems.add(item); removedRows++; return; }
     item.exerciseId = kept[0];
-    if (kept.length > 1) item.variants = kept.slice(1); else delete item.variants;
+    if (kept.length > 1) item.variants = kept.slice(1); else { delete item.variants; delete item.randomOrder; }
     delete item.variantDurations;
     if (keptC[0].dur != null) item.durationOverride = keptC[0].dur; else delete item.durationOverride;
     keptC.slice(1).forEach(c => { if (c.dur != null) setRowDuration(item, c.id, c.dur); });

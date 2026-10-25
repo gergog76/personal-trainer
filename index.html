@@ -589,11 +589,31 @@ window.addEventListener('unhandledrejection', function(e){
   // (N-1) % hossz indexű elemét használja, tehát a variánsok körről körre
   // ismétlődnek (2 variáns: A, B, A, B, ...). Hiányzó hivatkozásnál az
   // alap exerciseId-re esik vissza.
-  function pickVariantExercise(item, round, exercisesById){
+  function pickVariantExercise(item, round, exercisesById, order){
     const chain = [item.exerciseId].concat(Array.isArray(item.variants) ? item.variants : []);
     const r = Math.max(1, round | 0);
     const idx = (r - 1) % chain.length;
-    return exercisesById[chain[idx]] || exercisesById[item.exerciseId];
+    return exercisesById[chain[order ? order[idx] : idx]] || exercisesById[item.exerciseId];
+  }
+
+  // Véletlen sorrend ("randomOrder"): az `n` elemű láncra a sorsolt `roll` szám
+  // alapján permutációt ad (a lánc indexeinek új sorrendje). A roll mod n! adja
+  // a permutáció sorszámát (Lehmer-kód): 0 = eredeti sorrend. Két elemnél tehát:
+  // páros szám -> eredeti, páratlan -> felcserélt.
+  function variantOrder(n, roll){
+    let fact = 1;
+    for (let i = 2; i <= n; i++) fact *= i;
+    let k = Math.abs(roll | 0) % fact;
+    const pool = [];
+    for (let i = 0; i < n; i++) pool.push(i);
+    const out = [];
+    for (let i = n; i >= 1; i--){
+      fact /= i;
+      const pick = Math.floor(k / fact);
+      k %= fact;
+      out.push(pool.splice(pick, 1)[0]);
+    }
+    return out;
   }
 
   // Az adott körben használt lánc-elem sor-szintű időtartam-felülírása (mp) vagy
@@ -601,10 +621,11 @@ window.addEventListener('unhandledrejection', function(e){
   // alap gyakorlat felülírására cserélné): az alap gyakorlaté a "durationOverride", a variánsoké a
   // "variantDurations" (gyakorlat-id szerint). Ugyanazt a láncot indexeli, mint
   // a pickVariantExercise (hiányzó variáns -> az alap gyakorlat).
-  function pickVariantDuration(item, round, exercisesById){
+  function pickVariantDuration(item, round, exercisesById, order){
     const chain = [item.exerciseId].concat(Array.isArray(item.variants) ? item.variants : []);
     const r = Math.max(1, round | 0);
-    const id = chain[(r - 1) % chain.length];
+    const idx = (r - 1) % chain.length;
+    const id = chain[order ? order[idx] : idx];
     if (!exercisesById[id] || id === item.exerciseId) return item.durationOverride != null ? item.durationOverride : null;
     const vd = item.variantDurations;
     return (vd && vd[id] != null) ? vd[id] : null;
@@ -615,18 +636,42 @@ window.addEventListener('unhandledrejection', function(e){
   // gyorsítótáraz. A szerkesztő gondoskodik róla, hogy egy pozíció összes
   // variánsa azonos oldalisággal (sided) bírjon, így a lépésszám köröktől
   // független marad.
+  //
+  // A "randomOrder" soroknál minden sorhoz egy sorsolt szám tartozik (rolls[i]),
+  // amiből a lánc sorrendje számolódik (variantOrder). A sorsolás az edzés
+  // betöltésekor / kiválasztásakor történik (reroll), így egy edzésen belül a
+  // sorrend állandó, a körszám menet közbeni módosítása sem változtat rajta.
   function makeMainResolver(rawMain, exercisesById){
-    const cache = {};
-    return function mainRound(round){
+    let cache = {};
+    let rolls = [];
+    let orders = [];
+    function reroll(){
+      cache = {};
+      rolls = [];
+      orders = [];
+      (rawMain || []).forEach((item, i) => {
+        const n = 1 + (Array.isArray(item.variants) ? item.variants.length : 0);
+        if (item.randomOrder === true && n > 1){
+          rolls[i] = Math.floor(Math.random() * 2147483648);
+          orders[i] = variantOrder(n, rolls[i]);
+        }
+      });
+    }
+    function mainRound(round){
       const r = Math.max(1, round | 0);
       if (cache[r]) return cache[r];
       const out = [];
-      (rawMain || []).forEach(item => {
-        out.push(...expandBlockItem(item, pickVariantExercise(item, r, exercisesById), pickVariantDuration(item, r, exercisesById)));
+      (rawMain || []).forEach((item, i) => {
+        const order = orders[i] || null;
+        out.push(...expandBlockItem(item, pickVariantExercise(item, r, exercisesById, order), pickVariantDuration(item, r, exercisesById, order)));
       });
       cache[r] = out;
       return out;
-    };
+    }
+    mainRound.reroll = reroll;
+    mainRound.rolls = () => rolls.map((v, i) => v == null ? null : { item: i, roll: v, order: orders[i] }).filter(Boolean);
+    reroll();
+    return mainRound;
   }
 
   function applyTrainingData(data){
@@ -1128,6 +1173,12 @@ window.addEventListener('unhandledrejection', function(e){
     dbgLines.push(t + ' ' + msg);
     if (dbgLines.length > 10) dbgLines.shift();
     dbgEl.textContent = dbgLines.join('\n');
+  }
+
+  // A véletlen sorrendű variáns-sorok sorsolt számai és sorrendje (hibakereséshez).
+  function logVariantRolls(){
+    if (!mainForRound || !mainForRound.rolls) return;
+    mainForRound.rolls().forEach(x => dbg('véletlen sorrend: fő sor #' + (x.item + 1) + ' szám=' + x.roll + ' sorrend=' + x.order.map(k => k + 1).join(',')));
   }
   dbg('háttérhang/videó: ' + (USE_MEDIA ? 'BE' : 'KI (Wake Lock)'));
 
@@ -1899,6 +1950,8 @@ window.addEventListener('unhandledrejection', function(e){
     WARMUP = w.warmup;
     MAIN = w.main;
     mainForRound = w.mainForRound;
+    if (mainForRound && mainForRound.reroll) mainForRound.reroll();   // új sorsolás a véletlen sorrendű variánsokhoz
+    logVariantRolls();
     COOLDOWN = w.cooldown;
     ROUND_REST = w.roundRest;
     ROUNDS = roundsByWorkout[id];
@@ -2020,6 +2073,7 @@ window.addEventListener('unhandledrejection', function(e){
   btnRoundsMinus.addEventListener('click', () => adjustRounds(-1));
   btnRoundsPlus.addEventListener('click', () => adjustRounds(1));
 
+  logVariantRolls();
   renderRoundsUI();
   render();
   preloadClips();
