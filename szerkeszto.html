@@ -109,6 +109,9 @@
   }
   .block-item .bi-name{ flex:1; }
   .block-item .bi-badge{ font-size:10.5px; color:var(--text-dim); border:1px solid var(--line); border-radius:5px; padding:1px 5px; }
+  .block-item button.bi-badge.swap{ background:none; cursor:pointer; font-size:10.5px; padding:1px 5px; }
+  .block-item button.bi-badge.swap:hover{ color:var(--text); }
+  .block-item button.bi-badge.swap.on{ color:var(--accent); border-color:var(--accent); }
   .block-item .bi-badge.variant{ color:var(--accent); border-color:var(--accent); }
   .block-item button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; padding:2px 4px; }
   .block-item button:hover{ color:var(--text); }
@@ -882,7 +885,20 @@ function renderLeft(){
       const variants = Array.isArray(item.variants) ? item.variants : [];
       const row = el('div','block-item');
       row.appendChild(el('span','bi-name', ex ? ex.name : '(hiányzó: ' + item.exerciseId + ')'));
-      if (ex && ex.sided) row.appendChild(el('span','bi-badge','bal/jobb'));
+      if (ex && ex.sided){
+        const sl = ex.side_labels || {};
+        const l = sl.left || 'bal', r = sl.right || 'jobb';
+        const swapped = item.swapSides === true;
+        const swB = el('button', 'bi-badge swap' + (swapped ? ' on' : ''), swapped ? `${r} → ${l} ⇄` : `${l} → ${r}`);
+        swB.title = swapped
+          ? `Előbb a ${r}, utána a ${l} (ebben a tréningben). Kattints az eredeti sorrendhez.`
+          : `Előbb a ${l}, utána a ${r}. Kattints a sorrend felcserélésére (csak ebben a tréningben).`;
+        swB.onclick = () => {
+          if (swapped) delete item.swapSides; else item.swapSides = true;
+          setDirty(true); renderLeft();
+        };
+        row.appendChild(swB);
+      }
       const quick = effectiveQuickRest(item, ex);
       if (quick) row.appendChild(el('span','bi-badge variant','⚡ gyors pihenő'));
       else if (item.quickRest === false && quickRestDefault(ex)) row.appendChild(el('span','bi-badge','normál pihenő'));
