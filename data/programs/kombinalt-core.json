@@ -60,7 +60,8 @@
         "randomOrder": true
       },
       {
-        "exerciseId": "gerinccsavaras-labak"
+        "exerciseId": "gerinccsavaras-labak",
+        "swapSides": true
       },
       {
         "exerciseId": "fekvotamasz",
