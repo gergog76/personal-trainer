@@ -57,6 +57,14 @@
   #rightContent .empty-hint{ padding:4px 0; }
   #rightContent .detail-stat{ display:inline-flex; align-items:baseline; gap:6px; border:none; padding:2px 0; font-size:12.5px; }
   #rightContent .detail-stat span:first-child::after{ content:":"; }
+  #rightContent .dur-table{ flex-basis:100%; margin:4px 0; }
+  .dur-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+  .dur-table table{ border-collapse:collapse; font-size:12.5px; max-width:100%; }
+  .dur-table th, .dur-table td{ border:1px solid var(--line); padding:3px 10px; text-align:center; white-space:nowrap; }
+  .dur-table th{ color:var(--text-dim); font-weight:600; background:var(--bg); }
+  .dur-table th:first-child, .dur-table td.dur-label{ text-align:left; color:var(--text-dim); }
+  .dur-table td{ font-weight:600; }
+  .dur-table th.cur, .dur-table td.cur{ background:var(--surface-3); color:var(--text); }
   #rightContent .warn-block{ flex-basis:100%; margin-top:4px; }
   #rightContent .warn-block > div{ margin-top:0 !important; }
   #rightContent .warn-list{ margin:3px 0 0; padding-left:18px; }
@@ -78,7 +86,7 @@
   .card .meta{ color:var(--text-dim); font-size:12px; margin-top:4px; }
 
   label{ display:block; font-size:12px; color:var(--text-dim); margin:12px 0 4px; font-weight:600; }
-  input[type=text], input[type=number], textarea, select{
+  input[type=text], input[type=number], input[type=password], textarea, select{
     width:100%; background:var(--surface); border:1px solid var(--line); color:var(--text);
     border-radius:8px; padding:8px 10px; font-size:13.5px; font-family:inherit;
   }
@@ -101,6 +109,9 @@
   }
   .block-item .bi-name{ flex:1; }
   .block-item .bi-badge{ font-size:10.5px; color:var(--text-dim); border:1px solid var(--line); border-radius:5px; padding:1px 5px; }
+  .block-item button.bi-badge.swap{ background:none; cursor:pointer; font-size:10.5px; padding:1px 5px; }
+  .block-item button.bi-badge.swap:hover{ color:var(--text); }
+  .block-item button.bi-badge.swap.on{ color:var(--accent); border-color:var(--accent); }
   .block-item .bi-badge.variant{ color:var(--accent); border-color:var(--accent); }
   .block-item button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; padding:2px 4px; }
   .block-item button:hover{ color:var(--text); }
@@ -110,6 +121,14 @@
   .bi-var-chip.base{ color:var(--text); }
   .bi-var-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:11px; padding:0 1px; line-height:1; }
   .bi-var-chip button:hover{ color:var(--danger); }
+  .bi-var-chip button.on{ color:var(--accent); }
+  .bi-var-chip button.dur:hover{ color:var(--text); }
+  .dur-row{ display:flex; align-items:center; gap:8px; }
+  .dur-row input{ width:110px; }
+  .dur-hint{ font-size:12px; color:var(--text-dim); margin:6px 0 0; }
+  .bi-variants button.rnd{ background:none; border:1px solid var(--line); border-radius:5px; color:var(--text-dim); cursor:pointer; font-size:10.5px; padding:1px 6px; }
+  .bi-variants button.rnd.on{ color:var(--accent); border-color:var(--accent); }
+  .bi-variants button.rnd:hover{ color:var(--text); }
   .bi-var-note{ font-size:10px; color:var(--text-dim); font-style:italic; }
   .empty-hint{ color:var(--text-dim); font-size:13px; padding:20px 0; text-align:center; }
 
@@ -152,6 +171,43 @@
   .ex-tooltip .tt-meta{ color:var(--text-dim); margin-bottom:4px; }
   .ex-tooltip .tt-desc{ color:var(--text); }
 
+  /* Gyakorlatok nézet (teljes oldalas, a szerkesztőn belül) */
+  body.view-exercises .tabs, body.view-exercises .layout{ display:none !important; }
+  #viewExercises{ display:none; flex:1; flex-direction:column; min-height:0; overflow-y:auto; padding:16px 20px 28px; }
+  body.view-exercises #viewExercises{ display:flex; }
+  .ex-view-bar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .ex-view-bar h2{ flex:1; margin:0; font-size:16px; min-width:120px; }
+  .ex-view-controls{ max-width:900px; width:100%; margin-bottom:14px; }
+  .ex-view-controls .tag-grid{ margin-top:8px; }
+  .ex-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+  .ex-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .ec-images{ display:flex; gap:8px; }
+  .ec-images img{ flex:1; min-width:0; max-height:170px; object-fit:contain; background:var(--surface-2); border-radius:8px; }
+  .ec-images img.noimg{ opacity:.4; }
+  .ec-name{ font-weight:700; font-size:15px; }
+  .ec-sub{ color:var(--text-dim); font-size:12.5px; margin-top:-4px; }
+  .ec-badges, .ec-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .ec-badge{ font-size:11px; border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--text-dim); }
+  .ec-badge.q{ color:var(--accent); border-color:var(--accent); }
+  .ec-chip{ font-size:11.5px; background:var(--surface-2); border-radius:999px; padding:2px 8px; color:var(--text-dim); }
+  .ec-chip.eq{ background:transparent; border:1px dashed var(--line); }
+  .ec-desc{ font-size:13px; line-height:1.5; white-space:pre-wrap; }
+  .ec-switch{ font-size:12.5px; line-height:1.45; white-space:pre-wrap; color:var(--text-dim); border-left:2px solid var(--line); padding-left:8px; }
+  .ec-switch b{ color:var(--text); }
+  .ec-use-btn{ background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; padding:0; text-align:left; }
+  .ec-use-list{ font-size:12px; color:var(--text-dim); margin:4px 0 0; padding-left:16px; }
+  .ec-actions{ display:flex; gap:8px; padding-top:2px; margin-top:auto; }
+  .btn.danger.solid{ background:var(--danger); color:#1b0e08; }
+  .del-all{ display:flex; gap:10px; align-items:center; margin:10px 0 4px; font-size:13px; }
+  .del-all select{ flex:1; min-width:0; }
+  .del-row{ display:flex; gap:10px; align-items:center; padding:7px 0; border-top:1px solid var(--line); font-size:13px; }
+  .del-row .dr-label{ flex:1; min-width:0; }
+  .del-row select{ flex:0 0 52%; min-width:0; }
+  .auth-err{ color:var(--danger); font-size:12.5px; margin:8px 0 0; min-height:16px; }
+  .auth-remember{ display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; color:var(--text-dim); }
+  .auth-remember input{ width:auto; }
+  .del-note{ font-size:12px; color:var(--text-dim); margin-top:10px; line-height:1.45; }
+
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
     background:var(--surface-3); border:1px solid var(--line); border-radius:8px;
@@ -178,6 +234,10 @@
     }
     .tabs button.active{ color:var(--text); border-color:var(--accent); }
     .ex-tooltip{ display:none; }
+    #viewExercises{ padding:14px; }
+    .ex-grid{ grid-template-columns:1fr; }
+    .del-row, .del-all{ flex-direction:column; align-items:stretch; gap:6px; }
+    .del-row select{ flex:none; }
   }
 </style>
 </head>
@@ -187,6 +247,7 @@
   <h1>Edzés-szerkesztő</h1>
   <div class="status" id="statusEl">Betöltés…</div>
   <div style="display:flex; gap:8px;">
+    <button class="btn" id="btnExercises">Gyakorlatok</button>
     <button class="btn" id="btnReload">Frissítés</button>
     <button class="btn primary" id="btnSave" disabled>Mentés</button>
   </div>
@@ -233,11 +294,77 @@
   </div>
 </div>
 
+<section id="viewExercises">
+  <div class="ex-view-bar">
+    <button class="btn" id="btnBackToEditor">← Szerkesztő</button>
+    <h2 id="exViewTitle">Gyakorlatok</h2>
+    <button class="btn primary" id="btnNewExerciseView">+ Új gyakorlat</button>
+  </div>
+  <div class="ex-view-controls">
+    <input type="text" id="exViewSearch" placeholder="Keresés név szerint…">
+    <div class="tag-grid" id="exViewCats"></div>
+    <div class="tag-grid" id="exViewTags"></div>
+  </div>
+  <div class="ex-grid" id="exViewGrid"></div>
+</section>
+
+<div class="modal-backdrop" id="authModal">
+  <div class="modal" style="max-width:380px;">
+    <h3>Belépés a mentéshez</h3>
+    <form id="authForm" autocomplete="on">
+      <label for="authUser">Felhasználó</label>
+      <input type="text" id="authUser" name="username" autocomplete="username" value="szerkeszto" readonly>
+      <label for="authPass">Szerkesztő jelszó</label>
+      <input type="password" id="authPass" name="password" autocomplete="current-password" required>
+      <div class="auth-err" id="authErr" role="alert"></div>
+      <label class="auth-remember"><input type="checkbox" id="authRemember" checked> Megjegyzés ebben a böngészőben</label>
+      <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn" id="authCancel">Mégse</button>
+        <button type="submit" class="btn primary" id="authSubmit">Belépés</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="delModal">
+  <div class="modal" style="max-width:660px;">
+    <h3 id="delTitle">Gyakorlat törlése</h3>
+    <div id="delBody"></div>
+    <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn" id="delCancel">Mégse</button>
+      <button class="btn danger solid" id="delConfirm" disabled>Törlés</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="durModal">
+  <div class="modal" style="max-width:420px;">
+    <h3 id="durTitle">Időtartam</h3>
+    <form id="durForm">
+      <label for="durInput">Időtartam ebben a tréningben (mp)</label>
+      <div class="dur-row">
+        <input type="number" id="durInput" min="1" step="1">
+        <button type="button" class="btn small" id="durReset">Alapérték</button>
+      </div>
+      <div class="dur-hint" id="durHint"></div>
+      <div style="margin-top:16px;">
+        <button type="button" class="btn" id="durEditEx">✎ Eredeti gyakorlat szerkesztése</button>
+        <div class="dur-hint" id="durShared"></div>
+      </div>
+      <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn" id="durCancel">Mégse</button>
+        <button type="submit" class="btn primary">Kész</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="exModal">
   <div class="modal">
     <h3 id="exModalTitle">Gyakorlat szerkesztése</h3>
     <div id="exForm"></div>
     <div style="text-align:right; margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn danger" id="exDelete" style="margin-right:auto;">Gyakorlat törlése</button>
       <button class="btn" id="exCancel">Mégse</button>
       <button class="btn primary" id="exSave">Mentés</button>
     </div>
@@ -329,18 +456,59 @@ function imagePathsInUse(){
 }
 
 // Szabad kép-útvonalat választ egy alapnév köré (ütközésnél rövid utótag).
-function freeImagePath(base){
+function freeImagePath(base, ext = 'webp'){
   const slug = slugify(base) || 'kep';
   const used = imagePathsInUse();
-  let cand = `images/${slug}.webp`;
+  let cand = `images/${slug}.${ext}`;
   while (used.has(cand) || pendingImages.has(cand)){
-    cand = `images/${slug}-${Math.random().toString(36).slice(2, 6)}.webp`;
+    cand = `images/${slug}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
   }
   return cand;
 }
 
-// A kiválasztott fájlt átméretezi, felstage-eli, és visszaadja az útvonalát.
+// Animált kép (GIF / animált WebP / APNG) felismerése a fájl bájtjaiból; a
+// visszaadott érték a megtartandó kiterjesztés, állókép esetén null. A canvasos
+// átméretezés (resizeImageToBlob) csak az első képkockát őrizné meg, ezért az
+// animált képeket érintetlenül töltjük fel.
+async function animatedImageExt(file){
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const str = (a, b) => String.fromCharCode(...buf.subarray(a, b));
+  if (str(0, 4) === 'GIF8'){
+    let frames = 0;   // grafikus vezérlő kiterjesztések (21 F9): >= 2 -> több képkocka
+    for (let i = 0; i + 1 < buf.length; i++){
+      if (buf[i] === 0x21 && buf[i + 1] === 0xF9 && ++frames >= 2) return 'gif';
+    }
+    return null;
+  }
+  if (str(0, 4) === 'RIFF' && str(8, 12) === 'WEBP'){
+    return (str(12, 16) === 'VP8X' && (buf[20] & 0x02)) ? 'webp' : null;   // animáció-bit
+  }
+  if (buf[0] === 0x89 && str(1, 4) === 'PNG'){
+    for (let i = 8; i + 8 <= buf.length;){
+      const len = ((buf[i] << 24) | (buf[i + 1] << 16) | (buf[i + 2] << 8) | buf[i + 3]) >>> 0;
+      const type = str(i + 4, i + 8);
+      if (type === 'acTL') return 'png';   // APNG animáció-vezérlő
+      if (type === 'IDAT') return null;
+      i += 12 + len;
+    }
+  }
+  return null;
+}
+
+const MAX_ANIMATED_BYTES = 3 * 1024 * 1024;   // a mentés egyszerre ~4 MB képet fogad (save-data.mjs)
+
+// A kiválasztott fájlt átméretezi (animáltat érintetlenül hagyja), felstage-eli,
+// és visszaadja az útvonalát.
 async function stageImage(file, base){
+  const animExt = await animatedImageExt(file);
+  if (animExt){
+    if (file.size > MAX_ANIMATED_BYTES){
+      throw new Error(`az animált kép ${(file.size / 1048576).toFixed(1)} MB, a limit 3 MB – kicsinyítsd vagy rövidítsd az animációt`);
+    }
+    const path = freeImagePath(base, animExt);
+    pendingImages.set(path, file);
+    return path;
+  }
   const blob = await resizeImageToBlob(file, 800, 0.85);
   const path = freeImagePath(base);
   pendingImages.set(path, blob);
@@ -408,12 +576,15 @@ async function loadData(){
       saveCtx.baseSha = null;
     }
     pendingImages.clear();
+    stagedImageUrls.forEach(u => URL.revokeObjectURL(u));
+    stagedImageUrls.clear();
     $('#statusEl').textContent = 'Betöltve';
     renderMid();
     renderRight();
     renderLeft();
     renderLibraryPanel();
     renderCtxBar();
+    applyViewFromHash();
   } catch(err){
     $('#statusEl').textContent = 'Hiba a betöltéskor';
     toast('Nem sikerült betölteni az adatokat: ' + err.message, true);
@@ -429,7 +600,7 @@ async function saveData(){
     toast('Előbb frissíts – épp fut egy build az előző mentésből.', true);
     return;
   }
-  const token = ensureEditToken();
+  const token = await ensureEditToken();
   if (!token) return;
   if (!saveCtx.baseSha){
     toast('Nincs meg a dev branch feje – kattints a Frissítésre.', true);
@@ -450,7 +621,9 @@ async function saveData(){
     const out = await res.json().catch(() => ({}));
     if (res.status === 401){
       localStorage.removeItem('szerkeszto_token');
-      toast('Hibás jelszó – próbáld újra a Mentéssel.', true);
+      // Hibás jelszó: az űrlap magától újranyílik a hibaüzenettel, nem kell újra a Mentésre kattintani.
+      authErrorNext = 'Hibás jelszó – próbáld újra.';
+      setTimeout(saveData, 0);
       return;
     }
     if (res.status === 409){
@@ -523,6 +696,115 @@ function selectProgram(id){
 
 /* ---------- Jobb oszlop felül: kiválasztott tréning részletei ---------- */
 
+// Sor-szintű időtartam-felülírás (mp): az alap gyakorlathoz (vid nélkül) a
+// "durationOverride", a kör-variánshoz a "variantDurations[vid]". null = nincs.
+function rowDuration(item, vid){
+  if (vid == null) return item.durationOverride != null ? item.durationOverride : null;
+  const m = item.variantDurations;
+  return (m && m[vid] != null) ? m[vid] : null;
+}
+function setRowDuration(item, vid, sec){
+  if (vid == null){
+    if (sec == null) delete item.durationOverride; else item.durationOverride = sec;
+    return;
+  }
+  if (sec == null){
+    if (item.variantDurations) delete item.variantDurations[vid];
+  } else {
+    (item.variantDurations || (item.variantDurations = {}))[vid] = sec;
+  }
+  pruneVariantDurations(item);
+}
+// Árva kulcsok és az üres map eltávolítása (pl. variáns törlése után).
+function pruneVariantDurations(item){
+  if (!item.variantDurations) return;
+  const keep = Array.isArray(item.variants) ? item.variants : [];
+  Object.keys(item.variantDurations).forEach(k => { if (!keep.includes(k)) delete item.variantDurations[k]; });
+  if (!Object.keys(item.variantDurations).length) delete item.variantDurations;
+}
+
+// A tréning becsült teljes ideje másodpercben a megadott körszámmal. Az index.html
+// buildQueue()-jának ütemezését tükrözi (előkészület, bemelegítés, fő körök,
+// körök közti pihenő / roundRest, levezetés, blokk-átmenetek, gyors pihenők);
+// ha ott változik az ütemezés, itt is módosítani kell.
+function estimateDurationSec(p, rounds){
+  const C = data.constants;
+  const stepsOf = (item, ex, ov) => {
+    if (!ex) return [];
+    // sor-szintű felülírás -> a gyakorlat alapideje (sided: mindkét oldalra)
+    const dur = ov != null ? ov : (ex.duration_sec != null ? ex.duration_sec : null);
+    if (ex.sided){
+      return [
+        { dur: dur || C.work_sec, quick: item.quickRest === true },
+        { dur: dur || C.work_sec, quick: item.quickRestOverride != null ? !!item.quickRestOverride : true },
+      ];
+    }
+    return [{ dur: dur || C.work_sec, quick: item.quickRest != null ? !!item.quickRest : quickRestDefault(ex) }];
+  };
+  const expand = (items, pick) => {
+    const out = [];
+    (items || []).forEach(it => {
+      const [ex, ov] = pick ? pick(it) : [data.exercises[it.exerciseId], it.durationOverride];
+      out.push(...stepsOf(it, ex, ov));
+    });
+    return out;
+  };
+  const restBefore = st => (st && st.quick) ? C.quick_rest_sec : C.rest_sec;
+  // Lépések összideje, köztük a pihenőkkel (az első előtt nincs pihenő).
+  const seq = steps => steps.reduce((t, st, i) => t + st.dur + (i ? restBefore(st) : 0), 0);
+  const mainOf = r => expand(p.blocks.main, it => {
+    const chain = [it.exerciseId].concat(Array.isArray(it.variants) ? it.variants : []);
+    const id = chain[(r - 1) % chain.length];
+    if (!data.exercises[id] || id === it.exerciseId) return [data.exercises[it.exerciseId], it.durationOverride];
+    return [data.exercises[id], rowDuration(it, id)];
+  });
+  const warmup = expand(p.blocks.warmup);
+  const cooldown = expand(p.blocks.cooldown);
+  const roundRest = expand(p.blocks.roundRest);
+
+  let total = C.prep_sec;
+  if (warmup.length) total += seq(warmup) + C.block_transition_sec;
+  for (let r = 1; r <= rounds; r++){
+    total += seq(mainOf(r));
+    if (r < rounds){
+      if (!roundRest.length) total += C.round_rest_sec;
+      else {
+        // pihenő az első elem előtt, az elemek között és az utolsó után is
+        total += seq(roundRest) + restBefore(roundRest[0]) + restBefore(mainOf(r + 1)[0]);
+      }
+    }
+  }
+  if (cooldown.length) total += C.block_transition_sec + seq(cooldown);
+  return total;
+}
+
+function fmtDuration(sec){
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+// Kis táblázat: mennyi ideig tart a tréning 2, 3 vagy 4 körrel.
+function durationTable(p){
+  const wrap = el('div', 'dur-table');
+  const tbl = document.createElement('table');
+  const head = tbl.createTHead().insertRow();
+  const body = tbl.createTBody().insertRow();
+  head.appendChild(el('th', '', 'Időtartam'));
+  body.appendChild(el('td', 'dur-label', 'összesen'));
+  [2, 3, 4].forEach(n => {
+    const th = el('th', p.rounds === n ? 'cur' : '', n + ' kör');
+    const sec = estimateDurationSec(p, n);
+    const td = el('td', p.rounds === n ? 'cur' : '', '~' + Math.round(sec / 60) + ' perc');
+    td.title = fmtDuration(sec) + ' (perc:mp)';
+    head.appendChild(th); body.appendChild(td);
+  });
+  wrap.appendChild(tbl);
+  if ((p.blocks.main || []).some(it => it.randomOrder && Array.isArray(it.variants) && it.variants.length)){
+    wrap.appendChild(el('div', 'dur-note', '🎲 Véletlen sorrendű variáns van: az idő az eredeti sorrenddel számolt, a tényleges kissé eltérhet.'));
+  }
+  return wrap;
+}
+
 function renderRight(){
   const c = $('#rightContent');
   const p = data.programs.find(x => x.id === selectedProgramId);
@@ -530,14 +812,12 @@ function renderRight(){
   c.innerHTML = '';
   c.appendChild(el('div','detail-stat', `<span>Azonosító</span><span>${p.id}</span>`));
   c.appendChild(el('div','detail-stat', `<span>Körök</span><span>${p.rounds}</span>`));
-  let totalSec = 0, warnings = [];
+  const warnings = [];
   const equipmentSet = new Set();
   PROGRAM_BLOCK_KEYS.forEach(k => {
     (p.blocks[k]||[]).forEach(item => {
       const ex = data.exercises[item.exerciseId];
       if (!ex){ warnings.push(`Hiányzó gyakorlat-hivatkozás: ${item.exerciseId}`); return; }
-      const dur = item.durationOverride ?? ex.duration_sec ?? data.constants.work_sec;
-      totalSec += dur * (ex.sided ? 2 : 1);
       (ex.equipment||[]).forEach(e => equipmentSet.add(e));
       if (!ex.image && !ex.legacy_pose_a) warnings.push(`Nincs kép/ábra: ${ex.name}`);
       if (!ex.description) warnings.push(`Hiányzó leírás: ${ex.name}`);
@@ -552,7 +832,7 @@ function renderRight(){
     });
     c.appendChild(el('div','detail-stat', `<span>${BLOCK_LABELS[k]}</span><span>${(p.blocks[k]||[]).length} gyakorlat</span>`));
   });
-  c.appendChild(el('div','detail-stat', `<span>Becsült idő (kör nélkül)</span><span>~${Math.round(totalSec/60)} perc</span>`));
+  c.appendChild(durationTable(p));
   c.appendChild(el('div','detail-stat', `<span>Szükséges eszközök</span><span>${equipmentSet.size ? [...equipmentSet].join(', ') : 'nincs'}</span>`));
   if (warnings.length){
     const w = el('div', 'warn-block', '<div style="margin-top:14px; font-weight:600; font-size:12.5px;">Figyelmeztetések</div>');
@@ -582,7 +862,7 @@ function renderLeft(){
   idInput.oninput = () => { p.id = slugify(idInput.value); setDirty(true); };
   const roundsInput = document.createElement('input');
   roundsInput.type = 'number'; roundsInput.min = 1; roundsInput.max = 10; roundsInput.value = p.rounds;
-  roundsInput.oninput = () => { p.rounds = parseInt(roundsInput.value)||1; setDirty(true); renderMid(); };
+  roundsInput.oninput = () => { p.rounds = parseInt(roundsInput.value)||1; setDirty(true); renderMid(); renderRight(); };
   const idWrap = el('div'); idWrap.appendChild(el('label','','Azonosító (id)')); idWrap.appendChild(idInput);
   const roundsWrap = el('div'); roundsWrap.appendChild(el('label','','Körök száma')); roundsWrap.appendChild(roundsInput);
   idRow.appendChild(idWrap); idRow.appendChild(roundsWrap);
@@ -605,11 +885,26 @@ function renderLeft(){
       const variants = Array.isArray(item.variants) ? item.variants : [];
       const row = el('div','block-item');
       row.appendChild(el('span','bi-name', ex ? ex.name : '(hiányzó: ' + item.exerciseId + ')'));
-      if (ex && ex.sided) row.appendChild(el('span','bi-badge','bal/jobb'));
+      if (ex && ex.sided){
+        const sl = ex.side_labels || {};
+        const l = sl.left || 'bal', r = sl.right || 'jobb';
+        const swapped = item.swapSides === true;
+        const swB = el('button', 'bi-badge swap' + (swapped ? ' on' : ''), swapped ? `${r} → ${l} ⇄` : `${l} → ${r}`);
+        swB.title = swapped
+          ? `Előbb a ${r}, utána a ${l} (ebben a tréningben). Kattints az eredeti sorrendhez.`
+          : `Előbb a ${l}, utána a ${r}. Kattints a sorrend felcserélésére (csak ebben a tréningben).`;
+        swB.onclick = () => {
+          if (swapped) delete item.swapSides; else item.swapSides = true;
+          setDirty(true); renderLeft();
+        };
+        row.appendChild(swB);
+      }
       const quick = effectiveQuickRest(item, ex);
       if (quick) row.appendChild(el('span','bi-badge variant','⚡ gyors pihenő'));
       else if (item.quickRest === false && quickRestDefault(ex)) row.appendChild(el('span','bi-badge','normál pihenő'));
-      if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns'));
+      if (blockKey === 'main' && variants.length) row.appendChild(el('span','bi-badge variant','🔁 ' + (variants.length + 1) + ' kör-variáns' + (item.randomOrder ? ' 🎲' : '')));
+      const rowDur = rowDuration(item, null);
+      if (rowDur != null) row.appendChild(el('span','bi-badge variant','⏱ ' + rowDur + ' mp'));
       const up = el('button','','↑'); up.title='Feljebb';
       up.onclick = () => { if (idx>0){ [items[idx-1],items[idx]]=[items[idx],items[idx-1]]; setDirty(true); renderLeft(); } };
       const down = el('button','','↓'); down.title='Lejjebb';
@@ -648,26 +943,45 @@ function renderLeft(){
         };
         row.appendChild(varB);
       }
+      const durB = el('button', rowDur != null ? 'on' : '', '⏱');
+      durB.title = 'Időtartam ebben a tréningben' + (rowDur != null ? ` (most: ${rowDur} mp)` : '') + ' – és ugrás az eredeti gyakorlat szerkesztésére';
+      durB.onclick = () => openDurationDialog(item, null, null);
+      row.appendChild(durB);
       row.appendChild(editB); row.appendChild(rm);
       if (ex) attachTooltip(row, ex);
       listWrap.appendChild(row);
 
       if (blockKey === 'main' && variants.length){
         const vwrap = el('div','bi-variants');
-        vwrap.appendChild(el('span','bi-var-chip base', '1. kör: ' + (ex ? ex.name : item.exerciseId)));
+        vwrap.appendChild(el('span','bi-var-chip base', '1. kör: ' + (ex ? ex.name : item.exerciseId) + (rowDur != null ? ' · ⏱ ' + rowDur + ' mp' : '')));
         variants.forEach((vid, vi) => {
           const vex = data.exercises[vid];
-          const chip = el('span','bi-var-chip', (vi + 2) + '. kör: ' + (vex ? vex.name : '(hiányzó: ' + vid + ')'));
+          const vdur = rowDuration(item, vid);
+          const chip = el('span','bi-var-chip', (vi + 2) + '. kör: ' + (vex ? vex.name : '(hiányzó: ' + vid + ')') + (vdur != null ? ' · ⏱ ' + vdur + ' mp' : ''));
+          const vdurB = el('button', 'dur' + (vdur != null ? ' on' : ''), '⏱');
+          vdurB.title = 'Időtartam ebben a tréningben – és ugrás az eredeti gyakorlat szerkesztésére';
+          vdurB.onclick = () => openDurationDialog(item, vid, (vi + 2) + '. kör variáns');
+          chip.appendChild(vdurB);
           const del = el('button','','✕'); del.title = 'Variáns eltávolítása';
           del.onclick = () => {
             item.variants.splice(vi, 1);
-            if (!item.variants.length) delete item.variants;
-            setDirty(true); renderLeft();
+            if (!item.variants.length){ delete item.variants; delete item.randomOrder; }
+            pruneVariantDurations(item);
+            setDirty(true); renderLeft(); renderRight();
           };
           chip.appendChild(del);
           vwrap.appendChild(chip);
         });
-        vwrap.appendChild(el('span','bi-var-note', '· a körök közt ismétlődik'));
+        const rndB = el('button', 'rnd' + (item.randomOrder ? ' on' : ''), '🎲 véletlen sorrend');
+        rndB.title = item.randomOrder
+          ? 'Be: az edzés indításakor sorsolódik a sorrend (páros szám: eredeti, páratlan: felcserélt). Kattints a rögzített sorrendhez.'
+          : 'Ki: rögzített sorrend. Kattints, hogy az edzés indításakor véletlenszerűen sorsolódjon.';
+        rndB.onclick = () => {
+          if (item.randomOrder) delete item.randomOrder; else item.randomOrder = true;
+          setDirty(true); renderLeft(); renderRight();
+        };
+        vwrap.appendChild(rndB);
+        vwrap.appendChild(el('span','bi-var-note', item.randomOrder ? '· a sorrend indításkor sorsolódik, utána a körök közt ismétlődik' : '· a körök közt ismétlődik'));
         listWrap.appendChild(vwrap);
       }
     });
@@ -893,6 +1207,7 @@ function openExerciseEditor(exerciseId, addToCurrentBlockAfterSave){
     }
   };
   $('#exModalTitle').textContent = existing ? 'Gyakorlat szerkesztése' : 'Új gyakorlat létrehozása';
+  $('#exDelete').style.display = existing ? '' : 'none';
   renderExerciseForm();
   $('#exModal').classList.add('open');
 }
@@ -1051,8 +1366,377 @@ $('#exSave').onclick = () => {
   setDirty(true);
   $('#exModal').classList.remove('open');
   exEditContext = null;
-  renderLeft(); renderRight(); renderMid(); renderLibraryPanel();
+  renderLeft(); renderRight(); renderMid(); renderLibraryPanel(); renderExercisesView();
   toast('Gyakorlat mentve a könyvtárba.');
+};
+
+/* ---------- Gyakorlatok nézet (teljes oldalas) ---------- */
+
+const NONE_CHOICE = '__none__';
+let exViewSearch = '';
+const exViewCats = new Set();
+const exViewTags = new Set();
+const stagedImageUrls = new Map();   // "images/x.webp" -> blob: URL a még nem mentett (feltöltött) képekhez
+
+// DOM-elem szöveggel (textContent): az adat sosem kerül innerHTML-be.
+const T = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+};
+
+function stagedImageUrl(path){
+  const blob = pendingImages.get(path);
+  if (!blob) return null;
+  if (!stagedImageUrls.has(path)) stagedImageUrls.set(path, URL.createObjectURL(blob));
+  return stagedImageUrls.get(path);
+}
+
+function applyViewFromHash(){
+  const on = location.hash === '#gyakorlatok';
+  document.body.classList.toggle('view-exercises', on);
+  if (on) renderExercisesView();
+}
+window.addEventListener('hashchange', applyViewFromHash);
+
+// Hol szerepel egy gyakorlat a programokban (alap-gyakorlatként vagy kör-variánsként).
+function findUsages(exId){
+  const out = [];
+  (data.programs || []).forEach(p => {
+    PROGRAM_BLOCK_KEYS.forEach(bk => {
+      ((p.blocks && p.blocks[bk]) || []).forEach((item, index) => {
+        if (item.exerciseId === exId) out.push({ program: p, blockKey: bk, item, index, role: 'alap', variantIndex: -1 });
+        (Array.isArray(item.variants) ? item.variants : []).forEach((vid, vi) => {
+          if (vid === exId) out.push({ program: p, blockKey: bk, item, index, role: 'variáns', variantIndex: vi });
+        });
+      });
+    });
+  });
+  return out;
+}
+
+function usageLabel(u){
+  return `${u.program.name} › ${BLOCK_LABELS[u.blockKey]} › ${u.index + 1}. sor`
+    + (u.role === 'variáns' ? ` (kör-variáns, ${u.variantIndex + 2}. kör)` : '');
+}
+
+function exerciseMatches(ex){
+  const q = exViewSearch.trim().toLowerCase();
+  if (q && !(ex.name || '').toLowerCase().includes(q)) return false;
+  if (exViewCats.size && !exViewCats.has(ex.category)) return false;
+  if (exViewTags.size && !(ex.muscle_groups || []).some(t => exViewTags.has(t))) return false;
+  return true;
+}
+
+function renderExercisesView(){
+  if (!data || !document.body.classList.contains('view-exercises')) return;
+  const cats = $('#exViewCats');
+  cats.innerHTML = '';
+  Object.entries(CATEGORIES).forEach(([k, label]) => {
+    const t = T('div', 'tag' + (exViewCats.has(k) ? ' on' : ''), label);
+    t.onclick = () => { if (exViewCats.has(k)) exViewCats.delete(k); else exViewCats.add(k); renderExercisesView(); };
+    cats.appendChild(t);
+  });
+  const tags = $('#exViewTags');
+  tags.innerHTML = '';
+  Object.entries(data.muscle_group_taxonomy || {}).forEach(([k, label]) => {
+    const t = T('div', 'tag' + (exViewTags.has(k) ? ' on' : ''), label);
+    t.onclick = () => { if (exViewTags.has(k)) exViewTags.delete(k); else exViewTags.add(k); renderExercisesView(); };
+    tags.appendChild(t);
+  });
+  const total = Object.keys(data.exercises).length;
+  const entries = Object.entries(data.exercises)
+    .filter(([, ex]) => exerciseMatches(ex))
+    .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', 'hu'));
+  $('#exViewTitle').textContent = `Gyakorlatok (${entries.length === total ? total : entries.length + ' / ' + total})`;
+  const grid = $('#exViewGrid');
+  grid.innerHTML = '';
+  entries.forEach(([id, ex]) => grid.appendChild(exerciseCard(id, ex)));
+  if (!entries.length) grid.appendChild(T('div', 'empty-hint', 'Nincs találat.'));
+}
+
+function exerciseCard(id, ex){
+  const card = T('div', 'ex-card');
+
+  const imgs = T('div', 'ec-images');
+  const addImg = (path) => {
+    const img = document.createElement('img');
+    img.alt = ''; img.loading = 'lazy';
+    const fallback = () => { img.onerror = null; img.src = DEFAULT_IMG; img.classList.add('noimg'); };
+    const staged = path ? stagedImageUrl(path) : null;
+    if (staged) img.src = staged;
+    else if (path){ img.src = path; img.onerror = fallback; }
+    else fallback();
+    imgs.appendChild(img);
+  };
+  addImg(ex.image);
+  if (ex.image_right) addImg(ex.image_right);
+  card.appendChild(imgs);
+
+  card.appendChild(T('div', 'ec-name', ex.name));
+  if (ex.subtitle) card.appendChild(T('div', 'ec-sub', ex.subtitle));
+
+  const badges = T('div', 'ec-badges');
+  badges.appendChild(T('span', 'ec-badge', CATEGORIES[ex.category] || ex.category || '—'));
+  if (ex.sided) badges.appendChild(T('span', 'ec-badge', 'bal/jobb' + (ex.side_labels ? ` (${ex.side_labels.left} / ${ex.side_labels.right})` : '')));
+  if (ex.duration_sec) badges.appendChild(T('span', 'ec-badge', ex.duration_sec + ' mp'));
+  if (ex.quick_rest_default) badges.appendChild(T('span', 'ec-badge q', '⚡ gyors pihenő (alapból)'));
+  card.appendChild(badges);
+
+  const chips = T('div', 'ec-chips');
+  (ex.muscle_groups || []).forEach(k => chips.appendChild(T('span', 'ec-chip', (data.muscle_group_taxonomy || {})[k] || k)));
+  (ex.equipment || []).forEach(e => chips.appendChild(T('span', 'ec-chip eq', e)));
+  if (chips.children.length) card.appendChild(chips);
+
+  if (ex.description) card.appendChild(T('div', 'ec-desc', ex.description));
+  if (ex.sided && ex.description_switch){
+    const sw = T('div', 'ec-switch');
+    sw.appendChild(T('b', null, 'Váltás után' + (ex.side_labels ? ` (${ex.side_labels.right})` : '') + ': '));
+    sw.appendChild(document.createTextNode(ex.description_switch));
+    card.appendChild(sw);
+  }
+
+  const uses = findUsages(id);
+  if (uses.length){
+    const btn = T('button', 'ec-use-btn', `${uses.length} sorban szerepel ▾`);
+    const list = T('ul', 'ec-use-list');
+    list.style.display = 'none';
+    uses.forEach(u => list.appendChild(T('li', null, usageLabel(u))));
+    btn.onclick = () => {
+      const open = list.style.display === 'none';
+      list.style.display = open ? '' : 'none';
+      btn.textContent = `${uses.length} sorban szerepel ${open ? '▴' : '▾'}`;
+    };
+    card.appendChild(btn);
+    card.appendChild(list);
+  } else {
+    card.appendChild(T('div', 'ec-sub', 'Egyetlen programban sem szerepel.'));
+  }
+
+  const actions = T('div', 'ec-actions');
+  const editB = T('button', 'btn small', '✎ Szerkesztés');
+  editB.onclick = () => openExerciseEditor(id, false);
+  const delB = T('button', 'btn small danger', '🗑 Törlés');
+  delB.onclick = () => openDeleteDialog(id);
+  actions.appendChild(editB);
+  actions.appendChild(delB);
+  card.appendChild(actions);
+  return card;
+}
+
+/* ---------- Gyakorlat törlése (érintett sorok + helyettesítés) ---------- */
+
+let delContext = null;
+
+// Egy sorhoz jelölhető helyettesítők. A kör-variáns lánc (main sor "variants"-szal)
+// minden tagjának azonos oldalisságúnak kell lennie (lásd lib/data-schema.mjs validate),
+// és egy gyakorlat nem szerepelhet kétszer ugyanabban a láncban.
+function replacementCandidates(exId, u){
+  const item = u.item;
+  const chain = [item.exerciseId].concat(Array.isArray(item.variants) ? item.variants : []);
+  const others = chain.filter(id => id !== exId);
+  const requiredSided = others.length ? !!(data.exercises[others[0]] || {}).sided : null;
+  return Object.entries(data.exercises).filter(([id, ex]) =>
+    id !== exId && !others.includes(id) && (requiredSided === null || !!ex.sided === requiredSided));
+}
+
+function buildChoiceSelect(cands, deletedEx){
+  const sel = document.createElement('select');
+  const add = (parent, value, text) => {
+    const o = document.createElement('option');
+    o.value = value; o.textContent = text;
+    parent.appendChild(o);
+  };
+  add(sel, '', '— válassz —');
+  add(sel, NONE_CHOICE, 'Nincs helyettesítő (a sor kimarad / rövidebb lesz)');
+  const byName = (a, b) => (a[1].name || '').localeCompare(b[1].name || '', 'hu');
+  const near = cands.filter(([, ex]) => ex.category === deletedEx.category && !!ex.sided === !!deletedEx.sided).sort(byName);
+  const rest = cands.filter(c => !near.includes(c)).sort(byName);
+  const group = (label, list) => {
+    if (!list.length) return;
+    const g = document.createElement('optgroup');
+    g.label = label;
+    list.forEach(([id, ex]) => add(g, id, ex.name));
+    sel.appendChild(g);
+  };
+  group('Ajánlott (azonos kategória és oldalisság)', near);
+  group('Többi gyakorlat', rest);
+  return sel;
+}
+
+function updateDelConfirm(){
+  $('#delConfirm').disabled = !delContext || !delContext.selects.every(sel => sel.value !== '');
+}
+
+function closeDeleteDialog(){
+  $('#delModal').classList.remove('open');
+  delContext = null;
+}
+
+function openDeleteDialog(exId){
+  const ex = data.exercises[exId];
+  if (!ex) return;
+  const uses = findUsages(exId);
+  delContext = { exId, uses, selects: [] };
+  $('#delTitle').textContent = `„${ex.name}” törlése`;
+  const body = $('#delBody');
+  body.innerHTML = '';
+
+  if (!uses.length){
+    body.appendChild(T('div', null, 'Ez a gyakorlat egyetlen programban sem szerepel, a törlés más sorokat nem érint.'));
+    $('#delConfirm').disabled = false;
+  } else {
+    body.appendChild(T('div', null,
+      `A gyakorlat ${uses.length} program-sorban szerepel. Soronként válaszd ki a helyettesítő gyakorlatot, `
+      + 'vagy hogy nincs helyettesítő: ekkor a sor kimarad, a kör-variáns lánc pedig rövidebb lesz.'));
+
+    const allWrap = T('div', 'del-all');
+    allWrap.appendChild(T('span', null, 'Mindegyik sorhoz ugyanaz:'));
+    const allCands = Object.entries(data.exercises).filter(([id]) => id !== exId);
+    const allSel = buildChoiceSelect(allCands, ex);
+    const allNote = T('div', 'del-note');
+    allNote.style.marginTop = '0';
+    allSel.onchange = () => {
+      const v = allSel.value;
+      if (!v) return;
+      let skipped = 0;
+      delContext.selects.forEach(sel => {
+        if ([...sel.options].some(o => o.value === v)) sel.value = v; else skipped++;
+      });
+      allNote.textContent = skipped ? `${skipped} sornál nem alkalmazható (oldalisság / duplikáció), azt külön válaszd ki.` : '';
+      allSel.value = '';
+      updateDelConfirm();
+    };
+    allWrap.appendChild(allSel);
+    body.appendChild(allWrap);
+    body.appendChild(allNote);
+
+    uses.forEach(u => {
+      const row = T('div', 'del-row');
+      row.appendChild(T('div', 'dr-label', usageLabel(u)));
+      const sel = buildChoiceSelect(replacementCandidates(exId, u), ex);
+      sel.onchange = updateDelConfirm;
+      delContext.selects.push(sel);
+      row.appendChild(sel);
+      body.appendChild(row);
+    });
+    $('#delConfirm').disabled = true;
+  }
+
+  body.appendChild(T('div', 'del-note',
+    'A gyakorlat képfájlja (images/) és hangfájljai (audio/) nem törlődnek automatikusan. '
+    + 'A változás csak a Mentés után kerül a dev ágra; a Frissítés elveti.'));
+  $('#delModal').classList.add('open');
+}
+
+// A választások alkalmazása a memóriabeli adaton. Egy sor "lánca" = [alap, ...variánsok]:
+// helyettesítésnél a hely cserélődik, "nincs helyettesítő"-nél kikerül a láncból
+// (az első megmaradó tag lesz az alap; ha üres a lánc, a sor kimarad).
+function applyExerciseDeletion(exId, uses, choices){
+  const name = data.exercises[exId].name;
+  const groups = new Map();
+  uses.forEach((u, i) => {
+    if (!groups.has(u.item)) groups.set(u.item, []);
+    groups.get(u.item).push({ pos: u.role === 'alap' ? 0 : u.variantIndex + 1, choice: choices[i] });
+  });
+
+  let replaced = 0, shortened = 0, removedRows = 0;
+  const removeItems = new Set();
+  groups.forEach((entries, item) => {
+    // A sor-szintű időtartam-felülírás a lánc POZÍCIÓJÁHOZ tartozik: helyettesítéskor
+    // marad, "nincs helyettesítő"-nél a pozícióval együtt törlődik.
+    const chain = [{ id: item.exerciseId, dur: rowDuration(item, null) }]
+      .concat((Array.isArray(item.variants) ? item.variants : []).map(id => ({ id, dur: rowDuration(item, id) })));
+    let anyNone = false;
+    entries.forEach(({ pos, choice }) => {
+      if (choice === NONE_CHOICE){ chain[pos].del = true; anyNone = true; }
+      else { chain[pos].id = choice; replaced++; }
+    });
+    const keptC = chain.filter(c => !c.del);
+    const kept = keptC.map(c => c.id);
+    if (!kept.length){ removeItems.add(item); removedRows++; return; }
+    item.exerciseId = kept[0];
+    if (kept.length > 1) item.variants = kept.slice(1); else { delete item.variants; delete item.randomOrder; }
+    delete item.variantDurations;
+    if (keptC[0].dur != null) item.durationOverride = keptC[0].dur; else delete item.durationOverride;
+    keptC.slice(1).forEach(c => { if (c.dur != null) setRowDuration(item, c.id, c.dur); });
+    if (anyNone) shortened++;
+  });
+
+  (data.programs || []).forEach(p => {
+    PROGRAM_BLOCK_KEYS.forEach(bk => {
+      if (p.blocks && Array.isArray(p.blocks[bk])) p.blocks[bk] = p.blocks[bk].filter(it => !removeItems.has(it));
+    });
+  });
+  if (variantTarget && removeItems.has(variantTarget)) variantTarget = null;
+  delete data.exercises[exId];
+
+  setDirty(true);
+  renderMid(); renderRight(); renderLeft(); renderLibraryPanel(); renderExercisesView();
+  const parts = [];
+  if (replaced) parts.push(`${replaced} helyettesítve`);
+  if (shortened) parts.push(`${shortened} variáns-lánc rövidült`);
+  if (removedRows) parts.push(`${removedRows} sor kimaradt`);
+  toast(`Törölve: „${name}”` + (parts.length ? ' – ' + parts.join(', ') : '') + '. A Mentéssel kerül a dev ágra.');
+}
+
+/* ---------- Időtartam-felülírás (csak az adott tréning-sorban) ---------- */
+
+let durCtx = null;
+
+function openDurationDialog(item, vid, label){
+  const exId = vid != null ? vid : item.exerciseId;
+  const ex = data.exercises[exId];
+  durCtx = { item, vid, exId };
+  hideTooltip();   // az egér még a soron áll: ne maradjon a hover-előnézet a párbeszéd fölött
+  $('#durTitle').textContent = (ex ? ex.name : exId) + (label ? ' – ' + label : '');
+  const base = ex && ex.duration_sec != null ? ex.duration_sec : null;
+  const input = $('#durInput');
+  const cur = rowDuration(item, vid);
+  input.value = cur != null ? cur : '';
+  input.placeholder = String(base != null ? base : data.constants.work_sec);
+  $('#durHint').textContent = 'Üresen hagyva a gyakorlat alapideje érvényes: '
+    + (base != null ? base + ' mp' : data.constants.work_sec + ' mp (fő rész alapérték)')
+    + (ex && ex.sided ? '. Bal/jobb gyakorlatnál mindkét oldalra.' : '.');
+  const n = ex ? findUsages(exId).length : 0;
+  $('#durShared').textContent = 'A gyakorlat leírása, képe és alapideje közös: a szerkesztése minden tréningre hat'
+    + (n ? ` (${n} sorban szerepel).` : '.');
+  $('#durEditEx').disabled = !ex;
+  $('#durModal').classList.add('open');
+  setTimeout(() => input.focus(), 0);
+}
+
+function closeDurationDialog(){
+  $('#durModal').classList.remove('open');
+  durCtx = null;
+}
+
+// Beírt érték elmentése a sorba; false, ha érvénytelen (a párbeszéd nyitva marad).
+function commitDuration(){
+  if (!durCtx) return true;
+  const raw = $('#durInput').value.trim();
+  let sec = null;
+  if (raw !== ''){
+    sec = Number(raw);
+    if (!Number.isInteger(sec) || sec < 1){ toast('Az időtartam pozitív egész szám (mp) legyen.', true); return false; }
+  }
+  const { item, vid } = durCtx;
+  if (rowDuration(item, vid) !== sec){
+    setRowDuration(item, vid, sec);
+    setDirty(true); renderLeft(); renderRight();
+  }
+  return true;
+}
+
+$('#durForm').addEventListener('submit', (e) => { e.preventDefault(); if (commitDuration()) closeDurationDialog(); });
+$('#durCancel').onclick = closeDurationDialog;
+$('#durReset').onclick = () => { $('#durInput').value = ''; $('#durInput').focus(); };
+$('#durEditEx').onclick = () => {
+  if (!durCtx || !commitDuration()) return;
+  const id = durCtx.exId;
+  closeDurationDialog();
+  openExerciseEditor(id, false);
 };
 
 /* ---------- Mobil tab-váltás ---------- */
@@ -1068,21 +1752,70 @@ document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => showTab(b.d
 /* ---------- Globális gombok ---------- */
 
 $('#btnNewProgram').onclick = newProgram;
+$('#btnExercises').onclick = () => { location.hash = 'gyakorlatok'; };
+$('#btnBackToEditor').onclick = () => { location.hash = ''; };
+$('#btnNewExerciseView').onclick = () => openExerciseEditor(null, false);
+$('#exViewSearch').oninput = (e) => { exViewSearch = e.target.value; renderExercisesView(); };
+$('#delCancel').onclick = closeDeleteDialog;
+$('#delConfirm').onclick = () => {
+  if (!delContext) return;
+  const { exId, uses, selects } = delContext;
+  const choices = selects.map(sel => sel.value);
+  closeDeleteDialog();
+  applyExerciseDeletion(exId, uses, choices);
+};
+$('#exDelete').onclick = () => {
+  const ctx = exEditContext;
+  if (!ctx || ctx.mode !== 'edit') return;
+  $('#exModal').classList.remove('open');
+  exEditContext = null;
+  openDeleteDialog(ctx.exerciseId);
+};
 $('#btnSave').onclick = saveData;
 
 function getEditToken(){
   return localStorage.getItem('szerkeszto_token');
 }
 
-function ensureEditToken(){
-  let token = getEditToken();
-  if (!token){
-    token = prompt('Add meg a szerkesztő jelszót:');
-    if (!token) return null;
-    token = token.trim();
-    localStorage.setItem('szerkeszto_token', token);
-  }
-  return token;
+// A jelszót valódi űrlap kéri (felhasználónév + jelszó mező), nem a natív prompt():
+// így a böngésző jelszókezelője (Chrome, iCloud kulcsköteg) fel tudja ajánlani a
+// mentést és ki tudja tölteni. A "Megjegyzés" jelölőnégyzet a localStorage-ba ment.
+let authResolve = null;
+let authErrorNext = '';
+
+function askEditToken(errorMsg){
+  return new Promise(resolve => {
+    if (authResolve) authResolve(null);   // dupla kattintás: a korábbi, még függő kérés megszakad
+    authResolve = resolve;
+    $('#authErr').textContent = errorMsg || '';
+    $('#authPass').value = '';
+    $('#authModal').classList.add('open');
+    setTimeout(() => $('#authPass').focus(), 0);
+  });
+}
+
+function closeAuthDialog(value){
+  $('#authModal').classList.remove('open');
+  const resolve = authResolve;
+  authResolve = null;
+  if (resolve) resolve(value);
+}
+
+$('#authForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const token = $('#authPass').value.trim();
+  if (!token){ $('#authErr').textContent = 'Add meg a jelszót.'; return; }
+  if ($('#authRemember').checked) localStorage.setItem('szerkeszto_token', token);
+  closeAuthDialog(token);
+});
+$('#authCancel').onclick = () => closeAuthDialog(null);
+
+async function ensureEditToken(){
+  const stored = getEditToken();
+  if (stored) return stored;
+  const msg = authErrorNext;
+  authErrorNext = '';
+  return askEditToken(msg);
 }
 
 $('#btnReload').onclick = () => {
@@ -1093,6 +1826,7 @@ $('#btnReload').onclick = () => {
 
 window.addEventListener('beforeunload', (e) => { if (dirty){ e.preventDefault(); e.returnValue=''; } });
 
+applyViewFromHash();
 loadData();
 </script>
 </body>

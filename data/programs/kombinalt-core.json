@@ -31,35 +31,47 @@
         "exerciseId": "bird-dog",
         "variants": [
           "dead-bug"
-        ]
+        ],
+        "randomOrder": true
       },
       {
         "exerciseId": "csipoemeles-labdaval",
         "variants": [
           "terdek-oldaladolese-labdaval"
-        ]
+        ],
+        "randomOrder": true
       },
       {
         "exerciseId": "allbehuzas-labdaval",
         "variants": [
           "nyakforgatas-labdanyomassal"
-        ]
+        ],
+        "randomOrder": true
       },
       {
         "exerciseId": "fektetett-nyolcas-labdaval"
       },
       {
         "exerciseId": "oldalso-plank",
-        "sided": true
+        "sided": true,
+        "variants": [
+          "oldalso-labemeles"
+        ],
+        "randomOrder": true
       },
       {
-        "exerciseId": "gerinccsavaras-labak"
+        "exerciseId": "gerinccsavaras-labak",
+        "swapSides": true
       },
       {
         "exerciseId": "fekvotamasz",
         "variants": [
           "hegymaszo"
-        ]
+        ],
+        "randomOrder": true,
+        "variantDurations": {
+          "hegymaszo": 45
+        }
       },
       {
         "exerciseId": "plank",
@@ -80,14 +92,14 @@
       },
       {
         "exerciseId": "combfeszito-nyujtas-haton-fekve-egy-labbal"
+      },
+      {
+        "exerciseId": "gyerekpoz"
       }
     ],
     "roundRest": [
       {
         "exerciseId": "talp-hengerezes"
-      },
-      {
-        "exerciseId": "felso-hat-nyujtas-hengeren"
       },
       {
         "exerciseId": "hatso-comb-hengerezes"

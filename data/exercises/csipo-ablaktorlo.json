@@ -1,0 +1,21 @@
+{
+  "name": "Csipő ablaktörlő",
+  "category": "main",
+  "equipment": [],
+  "description": "Kiinduló helyzet: Ülj le a talajra, a térdeidet hajlítsd be, és húzd fel a lábaidat úgy, hogy a talpaid a földön legyenek, a csípődnél lényegesen szélesebb terpeszben. A kezeiddel támaszkodj meg magad mögött a talajon, a hátad tartsd egyenesen.\nVégrehajtás: Lassan, kontrolláltan döntsd (fordítsd) mindkét combodat és térdedet az egyik irányba a talaj felé. Az egyik combod kifelé, a másik befelé fog fordulni (ideális esetben mindkét térd megközelíti vagy érinti a talajt).\nFolytatás: Emeld vissza a lábaidat középre, majd fordítsd el őket a másik irányba is.\n",
+  "description_switch": "Válts oldalt",
+  "subtitle": "",
+  "image": "images/csipo-ablaktorlo.webp",
+  "duration_sec": 20,
+  "quick_rest_default": false,
+  "mirror": true,
+  "sided": true,
+  "side_labels": {
+    "left": "bal",
+    "right": "jobb"
+  },
+  "muscle_groups": [
+    "csipo"
+  ],
+  "source_reference": ""
+}
