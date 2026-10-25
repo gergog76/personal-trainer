@@ -84,6 +84,8 @@ programs: [
   // each block item: { exerciseId, quickRest?, durationOverride?, sided? }
   // durationOverride? (int, seconds): this row's duration instead of the exercise's own duration_sec
   //   (both sides of a `sided` exercise); set with the ⏱ button (any block)
+  // swapSides? (bool, click the "bal → jobb" badge on a sided row): play the right side first, then the left
+  //   (name, description and image move with the side; rest flags belong to the position); this program row only
   // main block items only: randomOrder? (bool, set with the 🎲 toggle under a variant row): the order of the
   //   variant chain is drawn at random instead of fixed (see "Random variant order" below)
   // main block items only: variantDurations?: { "<variantExId>": seconds } — the same override for a

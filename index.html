@@ -557,17 +557,21 @@ window.addEventListener('unhandledrejection', function(e){
       const left = Object.assign({}, base, {
         name: base.name + (exercise.side_labels ? ' – ' + exercise.side_labels.left : ''),
       });
-      // A pihenő az első oldal előtt: csak a program-elem kifejezett beállítására
-      // gyors (a gyakorlat quick_rest_default értéke itt nem érvényes).
-      if (blockItem.quickRest === true) left.quickRest = true;
       const right = Object.assign({}, base, {
         name: base.name + (exercise.side_labels ? ' – ' + exercise.side_labels.right : ''),
         desc: exercise.description_switch || base.desc,
         img: exercise.image_right || base.img,
         mirror: !!exercise.mirror,
-        quickRest: blockItem.quickRestOverride != null ? blockItem.quickRestOverride : true,
       });
-      return [left, right];
+      // "swapSides": a program-sor felcseréli a sorrendet (előbb a jobb, utána a
+      // bal) - a név, leírás és kép az oldallal együtt mozog. A pihenő-jelölők a
+      // POZÍCIÓHOZ tartoznak: az első oldal előtt csak a program-elem kifejezett
+      // beállítására gyors pihenő (a gyakorlat quick_rest_default értéke itt nem
+      // érvényes), a két oldal között alapból gyors.
+      const [first, second] = blockItem.swapSides === true ? [right, left] : [left, right];
+      if (blockItem.quickRest === true) first.quickRest = true;
+      second.quickRest = blockItem.quickRestOverride != null ? blockItem.quickRestOverride : true;
+      return [first, second];
     }
 
     const item = Object.assign({}, base);
