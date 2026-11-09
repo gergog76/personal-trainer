@@ -70,7 +70,7 @@
         ],
         "randomOrder": true,
         "variantDurations": {
-          "hegymaszo": 45
+          "hegymaszo": 40
         }
       },
       {
@@ -81,10 +81,6 @@
     "cooldown": [
       {
         "exerciseId": "galamb-gyakorlat",
-        "sided": true
-      },
-      {
-        "exerciseId": "csipohajlito-nyujtas",
         "sided": true
       },
       {
